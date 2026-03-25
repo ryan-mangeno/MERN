@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ObjectId } = require('mongodb');
 
 const url = 'mongodb+srv://ma058102:group4@mern.7inupbn.mongodb.net/?appName=MERN';
@@ -32,30 +33,63 @@ const register = async (req, res) => {
       ]
     });
 
-    if (existingUser) {
-      error = 'Email or username already exists';
+    if (existingUser && existingUser.active) {
+      error = 'An account with that email or username already exists';
       return res.status(409).json({ userId: null, error });
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user object
-    const newUser = {
+    // Generate JWT token for email verification
+    const secretKey = process.env.JWT_SECRET;
+    const payload = {
       email: email.toLowerCase(),
-      username: username,
-      hashedPassword: hashedPassword,
-      profilePicture: '',
-      servers: [],
-      friends: [],
-      createdAt: new Date()
+      username: username
     };
+    const temporarytoken = jwt.sign(payload, secretKey, { expiresIn: 12000 });
 
-    // Insert user into database
-    const result = await db.collection('users').insertOne(newUser);
-    userId = result.insertedId;
+    let userId;
 
-    return res.status(201).json({ userId: userId.toString(), error: '' });
+    // If user exists but is not active, update their record
+    if (existingUser && !existingUser.active) {
+      const result = await db.collection('users').updateOne(
+        { _id: existingUser._id },
+        {
+          $set: {
+            username: username,
+            hashedPassword: hashedPassword,
+            temporarytoken: temporarytoken,
+            active: false,
+            createdAt: new Date()
+          }
+        }
+      );
+      userId = existingUser._id;
+    } else {
+      // Create new user object
+      const newUser = {
+        email: email.toLowerCase(),
+        username: username,
+        hashedPassword: hashedPassword,
+        profilePicture: '',
+        servers: [],
+        friends: [],
+        temporarytoken: temporarytoken,
+        active: false,
+        createdAt: new Date()
+      };
+
+      // Insert user into database
+      const result = await db.collection('users').insertOne(newUser);
+      userId = result.insertedId;
+    }
+
+    return res.status(201).json({ 
+      userId: userId.toString(), 
+      temporarytoken: temporarytoken,
+      error: '' 
+    });
   }
   catch (e) {
     error = e.toString();
@@ -95,6 +129,12 @@ const login = async (req, res) => {
 
     if (!passwordMatch) {
       error = 'Invalid email/username or password';
+      return res.status(401).json({ userId: null, username: '', error });
+    }
+
+    // Check if user is active (email verified)
+    if (!user.active) {
+      error = 'Please verify your email before logging in';
       return res.status(401).json({ userId: null, username: '', error });
     }
 
@@ -141,6 +181,8 @@ const getUserProfile = async (req, res) => {
     return res.status(500).json({ userId: null, username: '', error });
   }
 };
+
+
 
 module.exports = {
   register,

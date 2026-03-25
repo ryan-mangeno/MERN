@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { buildPath } from "../utils/config";
 
 function Login()
 {
@@ -28,7 +29,7 @@ function Login()
 
       try
       {    
-          const response = await fetch('http://localhost:5000/api/login',
+          const response = await fetch(buildPath('api/auth/login'),
               {method:'POST',body:js,headers:{'Content-Type': 'application/json'}});
 
           var res = JSON.parse(await response.text());
@@ -79,7 +80,9 @@ function Login()
         onClick={doLogin}
       />
 
-      <span id="loginResult">{message}</span>
+      <span id="loginResult">{message}</span><br />
+
+      <a href="/register">Don't have an account? Register here</a>
     </div>
   );
 }

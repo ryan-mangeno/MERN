@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 
@@ -9,6 +11,7 @@ client.connect();
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const sendGridRoutes = require('./routes/sendGridRoutes');
 
 const app = express();
 app.use(cors());
@@ -17,6 +20,7 @@ app.use(express.json());
 
 // Use routes
 app.use('/api/auth', authRoutes);
+app.use('/api/sendgrid', sendGridRoutes);
 
 app.post('/api/addcard', async (req, res, next) =>
 {
