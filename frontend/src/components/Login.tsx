@@ -1,12 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { buildPath } from "../utils/config";
 import { storeToken } from "../utils/tokenStorage";
 
 function Login()
 {
-  const navigate = useNavigate();
-
   const [message, setMessage] = useState('');
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setPassword] = useState('');
