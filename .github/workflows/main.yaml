@@ -18,10 +18,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20.16.0
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
-          cd backend && npm install
-          cd ../frontend && npm install
+          cd backend
+          npm install
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
 
   deploy:
     needs: build
