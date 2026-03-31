@@ -14,6 +14,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const serverRoutes = require('./routes/serverRoutes');
 const sendGridRoutes = require('./routes/sendGridRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 const api = require('./api');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/servers', serverRoutes);
 app.use('/api/sendgrid', sendGridRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Initialize API endpoints
 api.setApp(app, client);
