@@ -6,6 +6,7 @@ const {
   getServer,
   updateServer,
   deleteServer,
+  createTextChannel,
 } = require('../controllers/serverController');
 
 const {
@@ -29,6 +30,9 @@ router.post('/', createServer);
 router.get('/:serverId', getServer);
 router.patch('/:serverId', updateServer);
 router.delete('/:serverId', deleteServer);
+
+// text channels
+router.post('/:serverId/textChannels', createTextChannel);
 
 // server membership
 router.post('/:serverId/join', joinServer);

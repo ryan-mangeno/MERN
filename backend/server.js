@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 
 const MongoClient = require('mongodb').MongoClient;
-const url = 'mongodb+srv://ma058102:group4@mern.7inupbn.mongodb.net/?appName=MERN';
+const url = process.env.MONGODB_URI;
 
 const client = new MongoClient(url);
 client.connect();
@@ -15,6 +15,7 @@ const userRoutes = require('./routes/userRoutes');
 const serverRoutes = require('./routes/serverRoutes');
 const sendGridRoutes = require('./routes/sendGridRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const api = require('./api');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/servers', serverRoutes);
 app.use('/api/sendgrid', sendGridRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/', chatRoutes);
 
 // Initialize API endpoints
 api.setApp(app, client);
