@@ -1,0 +1,94 @@
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import MessageComposer from './MessageComposer';
+import MessageList from './MessageList';
+import ThreadHeader from './ThreadHeader';
+import ThreadList from './ThreadList';
+import { useChatThread } from '../hooks/useChatThread';
+import type { Thread } from '../types/chat';
+import './ChatThreadView.css';
+
+type ChatThreadViewProps = {
+  serverId?: string;
+  channelId?: string;
+  recieverId?: string;
+  showSidebar?: boolean;
+  className?: string;
+};
+
+function ChatThreadView({ serverId, channelId, recieverId, showSidebar = true, className = '' }: ChatThreadViewProps) {
+  const navigate = useNavigate();
+  const {
+    threads,
+    activeThread,
+    messages,
+    loading,
+    error,
+    setActiveThread,
+    setMessages,
+    sendMessage,
+    editMessage,
+    removeMessage,
+  } = useChatThread(serverId, channelId, recieverId);
+
+  const currentUserId = useMemo(() => {
+    try {
+      const rawUser = localStorage.getItem('user_data');
+      if (!rawUser) {
+        return '';
+      }
+
+      const parsed = JSON.parse(rawUser);
+      return parsed?.id || '';
+    } catch {
+      return '';
+    }
+  }, []);
+
+  const handleSelectThread = (thread: Thread) => {
+    setActiveThread(thread);
+    setMessages([]);
+
+    if (thread.kind === 'server' && thread.serverId && thread.channelId) {
+      navigate(`/chat/server/${thread.serverId}/channel/${thread.channelId}`);
+      return;
+    }
+
+    if (thread.kind === 'dm' && thread.recieverId) {
+      navigate(`/chat/dm/${thread.recieverId}`);
+    }
+  };
+
+  return (
+    <div className={`chat-thread-view ${className}`.trim()}>
+      {showSidebar && (
+        <ThreadList
+          threads={threads}
+          activeThreadId={activeThread?.id || ''}
+          onSelectThread={handleSelectThread}
+        />
+      )}
+
+      <section className="chat-thread-panel">
+        <ThreadHeader thread={activeThread} />
+
+        {loading && <p className="muted chat-thread-status">Loading chat...</p>}
+        {error && <p className="error-text chat-thread-status">{error}</p>}
+
+        <MessageList
+          currentUserId={currentUserId}
+          messages={messages}
+          onEditMessage={editMessage}
+          onDeleteMessage={removeMessage}
+        />
+
+        <MessageComposer
+          disabled={!activeThread}
+          onSend={sendMessage}
+        />
+      </section>
+    </div>
+  );
+}
+
+export default ChatThreadView;

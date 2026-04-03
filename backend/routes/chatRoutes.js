@@ -8,6 +8,8 @@ const {
 	deleteMessage,
 	sendDirectMessage,
 	getDirectMessages,
+	updateDirectMessage,
+	deleteDirectMessage,
 	getDirectConversations,
 } = require('../controllers/chatController');
 
@@ -31,5 +33,11 @@ router.get('/api/chat/dms', getDirectConversations);
 
 // GET /api/chat/dms/:recipientId/messages
 router.get('/api/chat/dms/:recipientId/messages', getDirectMessages);
+
+// PATCH /api/chat/dms/:recipientId/messages/:messageId
+router.patch('/api/chat/dms/:recipientId/messages/:messageId', updateDirectMessage);
+
+// DELETE /api/chat/dms/:recipientId/messages/:messageId
+router.delete('/api/chat/dms/:recipientId/messages/:messageId', deleteDirectMessage);
 
 module.exports = router;
