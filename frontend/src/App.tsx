@@ -7,6 +7,7 @@ import VerifyCode from './components/VerifyCode.tsx';
 import LoginPage from './pages/LoginPage';
 import CardPage from './pages/CardPage';
 import ChatPage from './pages/ChatPage';
+import FriendsPage from './pages/FriendsPage';
 import { isTokenValid } from './utils/tokenStorage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/" element={<LoginPage/>}/>
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/register" element={<Register/>}/>
+        <Route path="/friends" element={<ProtectedRoute><FriendsPage/></ProtectedRoute>}/>
         <Route path="/cards" element={<ProtectedRoute><CardPage/></ProtectedRoute>}/>
         <Route path="/chat" element={<ProtectedRoute><ChatPage/></ProtectedRoute>}/>
         <Route path="/chat/server/:serverId/channel/:channelId" element={<ProtectedRoute><ChatPage/></ProtectedRoute>}/>

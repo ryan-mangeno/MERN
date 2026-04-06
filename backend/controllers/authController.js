@@ -292,6 +292,43 @@ const verifyEmail = async (req, res) => {
   }
 };
 
+const refreshAccessToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  let error = '';
+
+  try {
+    if (!refreshToken) {
+      error = 'refreshToken is required';
+      return res.status(400).json({ accessToken: '', refreshToken: '', error });
+    }
+
+    const refreshResult = jwtManager.refreshFromRefreshToken(refreshToken);
+    if (refreshResult.error) {
+      return res.status(401).json({ accessToken: '', refreshToken: '', error: 'Invalid or expired refresh token' });
+    }
+
+    const db = client.db('discord_clone');
+    const user = await db.collection('users').findOne({ _id: new ObjectId(refreshResult.userId) });
+    if (!user) {
+      return res.status(401).json({ accessToken: '', refreshToken: '', error: 'User no longer exists' });
+    }
+
+    const tokenResult = jwtManager.createTokenPair(user._id.toString(), user.email, user.username);
+    if (tokenResult.error) {
+      return res.status(500).json({ accessToken: '', refreshToken: '', error: tokenResult.error });
+    }
+
+    return res.status(200).json({
+      accessToken: tokenResult.accessToken,
+      refreshToken: tokenResult.refreshToken,
+      error: '',
+    });
+  } catch (e) {
+    error = e.toString();
+    return res.status(500).json({ accessToken: '', refreshToken: '', error });
+  }
+};
+
 // Resend verification code
 const resendVerificationCode = async (req, res) => {
   const { userId } = req.body;
