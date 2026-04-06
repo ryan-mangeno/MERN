@@ -1,5 +1,4 @@
 const { MongoClient, ObjectId } = require('mongodb');
-<<<<<<< Updated upstream
 const jwt = require('jsonwebtoken');
 const {
 	getCursorPage,
@@ -11,8 +10,6 @@ const {
 	buildDmThread,
 	makeConversationKey,
 } = require('../services/chatThreadService');
-=======
->>>>>>> Stashed changes
 require('dotenv').config();
 
 const url = process.env.MONGODB_URI;
@@ -33,7 +30,6 @@ const normalizeLimit = (value, fallback = 50) => {
 	return Math.min(parsed, 100);
 };
 
-<<<<<<< Updated upstream
 const isWithinMessageEditWindow = (messageDoc) => {
 	if (!messageDoc || !messageDoc.createdAt) {
 		return false;
@@ -72,8 +68,6 @@ const getRequestUserId = (req) => {
 	return null;
 };
 
-=======
->>>>>>> Stashed changes
 const ensureIndexes = async (db) => {
 	if (indexesReady) {
 		return;
