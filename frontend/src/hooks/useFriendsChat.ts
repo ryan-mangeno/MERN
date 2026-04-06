@@ -47,7 +47,7 @@ export const useFriendsChat = () => {
       setError('');
 
       try {
-        const response = await authFetch(buildPath(`api/users/${userId}/friends`));
+        const response = await authFetch(buildPath(`api/users/friends`));
         
         if (!response.ok) {
           throw new Error('Failed to load friends.');

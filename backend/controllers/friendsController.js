@@ -8,13 +8,14 @@ if (!client.topology || !client.topology.isConnected()) {
 }
 
 // add friend 
-// POST /api/users/:userId/friends/:friendId
+// POST /api/users/friends/:friendId
 const addFriend = async (req, res) => {
-  const { userId, friendId } = req.params;
+  const userId = req.userId;
+  const { friendId } = req.params;
   let error = '';
 
   try {
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(friendId)) {
+    if (!userId || !ObjectId.isValid(userId) || !ObjectId.isValid(friendId)) {
       error = 'Invalid user ID(s)';
       return res.status(400).json({ friends: [], error });
     }
@@ -66,13 +67,14 @@ const addFriend = async (req, res) => {
 };
 
 // remove friend 
-// DELETE /api/users/:userId/friends/:friendId
+// DELETE /api/users/friends/:friendId
 const removeFriend = async (req, res) => {
-  const { userId, friendId } = req.params;
+  const userId = req.userId;
+  const { friendId } = req.params;
   let error = '';
 
   try {
-    if (!ObjectId.isValid(userId) || !ObjectId.isValid(friendId)) {
+    if (!userId || !ObjectId.isValid(userId) || !ObjectId.isValid(friendId)) {
       error = 'Invalid user ID(s)';
       return res.status(400).json({ friends: [], error });
     }
@@ -111,11 +113,12 @@ const removeFriend = async (req, res) => {
 // get all friends for a user
 // GET /api/users/:userId/friends
 const getFriends = async (req, res) => {
-  const { userId } = req.params;
+  // Use authenticated userId from token, not from URL params
+  const userId = req.userId;
   let error = '';
 
   try {
-    if (!ObjectId.isValid(userId)) {
+    if (!userId || !ObjectId.isValid(userId)) {
       error = 'Invalid user ID';
       return res.status(400).json({ friends: [], error });
     }
