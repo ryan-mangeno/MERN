@@ -47,20 +47,29 @@ export const useFriendsChat = () => {
       setError('');
 
       try {
+        console.log('Loading friends for userId:', userId);
         const response = await authFetch(buildPath(`api/users/friends`));
         
+        console.log('Friends response status:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to load friends.');
+          const errorText = await response.text();
+          console.error('Friends API error response:', errorText);
+          throw new Error(`Failed to load friends (${response.status}): ${errorText.substring(0, 200)}`);
         }
 
         const payload = await response.json();
+        console.log('Friends payload:', payload);
+        
         if (payload.error) {
           throw new Error(payload.error);
         }
 
         setFriends(payload.friends || []);
       } catch (err: any) {
-        setError(err?.message || err?.toString?.() || 'Unable to load friends.');
+        const errorMsg = err?.message || err?.toString?.() || 'Unable to load friends.';
+        console.error('Error in loadFriends:', errorMsg);
+        setError(errorMsg);
         setFriends([]);
       } finally {
         setLoading(false);

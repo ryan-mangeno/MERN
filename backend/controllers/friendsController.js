@@ -118,8 +118,11 @@ const getFriends = async (req, res) => {
   let error = '';
 
   try {
+    console.log('getFriends called with userId:', userId);
+    
     if (!userId || !ObjectId.isValid(userId)) {
       error = 'Invalid user ID';
+      console.error('Invalid userId:', userId);
       return res.status(400).json({ friends: [], error });
     }
 
@@ -128,8 +131,11 @@ const getFriends = async (req, res) => {
 
     if (!user) {
       error = 'User not found';
+      console.error('User not found in database for userId:', userId);
       return res.status(404).json({ friends: [], error });
     }
+
+    console.log('Found user:', user.username, 'with friends:', user.friends?.length || 0);
 
     const friendIds = user.friends || [];
     const friendProfiles = await db
@@ -138,9 +144,11 @@ const getFriends = async (req, res) => {
       .project({ _id: 1, username: 1, profilePicture: 1 })
       .toArray();
 
+    console.log('Returning', friendProfiles.length, 'friends');
     return res.status(200).json({ friends: friendProfiles, error: '' });
   } catch (e) {
     error = e.toString();
+    console.error('Error in getFriends:', error);
     return res.status(500).json({ friends: [], error });
   }
 };
