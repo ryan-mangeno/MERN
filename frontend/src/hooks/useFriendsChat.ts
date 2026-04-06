@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authFetch } from '../utils/authFetch';
-import { buildPath } from '../utils/config';
 
 interface Friend {
   _id: string;
@@ -48,7 +47,7 @@ export const useFriendsChat = () => {
 
       try {
         console.log('Loading friends for userId:', userId);
-        const response = await authFetch(buildPath(`api/users/friends`));
+        const response = await authFetch(`api/users/friends`);
         
         console.log('Friends response status:', response.status);
         
@@ -89,7 +88,7 @@ export const useFriendsChat = () => {
 
       try {
         const response = await authFetch(
-          buildPath(`api/chat/dm/${selectedFriend._id}?limit=50`)
+          `api/chat/dm/${selectedFriend._id}?limit=50`
         );
 
         if (!response.ok) {
@@ -118,7 +117,7 @@ export const useFriendsChat = () => {
     setIsSending(true);
     try {
       const response = await authFetch(
-        buildPath(`api/chat/dm/${selectedFriend._id}`),
+        `api/chat/dm/${selectedFriend._id}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
