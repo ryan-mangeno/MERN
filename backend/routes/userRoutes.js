@@ -1,18 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../middleware/tokenMiddleware');
 const { getUserServers } = require('../controllers/serverController');
-const { addFriend, removeFriend, getFriends } = require('../controllers/friendsController');
+const { addFriend, removeFriend, getFriends, searchUserByUsername } = require('../controllers/friendsController');
 
-// GET /api/users/:userId/servers
-router.get('/:userId/servers', getUserServers);
+// GET /api/users/search?username=xxx
+router.get('/search', verifyToken, searchUserByUsername);
 
-// GET /api/users/:userId/friends
-router.get('/:userId/friends', getFriends);
+// GET /api/users/servers
+router.get('/servers', verifyToken, getUserServers);
 
-// POST /api/users/:userId/friends/:friendId
-router.post('/:userId/friends/:friendId', addFriend);
+// GET /api/users/friends
+router.get('/friends', verifyToken, getFriends);
 
-// DELETE /api/users/:userId/friends/:friendId
-router.delete('/:userId/friends/:friendId', removeFriend);
+// POST /api/users/friends/:friendId
+router.post('/friends/:friendId', verifyToken, addFriend);
+
+// DELETE /api/users/friends/:friendId
+router.delete('/friends/:friendId', verifyToken, removeFriend);
 
 module.exports = router;

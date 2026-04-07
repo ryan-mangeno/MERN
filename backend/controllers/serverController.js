@@ -7,6 +7,8 @@ if (!client.topology || !client.topology.isConnected()) {
   client.connect();
 }
 
+
+
 // create new discord server
 // POST /api/servers
 const createServer = async (req, res) => {
@@ -19,13 +21,12 @@ const createServer = async (req, res) => {
       return res.status(400).json({ server: null, error });
     }
 
-    if (!ObjectId.isValid(ownerId)) {
-      error = 'Invalid ownerId';
-      return res.status(400).json({ server: null, error });
+    const ownerObjId = toObjectId(ownerId);
+    if (!ownerObjId) {
+      return res.status(400).json({ server: null, error: 'Invalid ownerId' });
     }
 
     const db = client.db('discord_clone');
-    const ownerObjId = new ObjectId(ownerId);
 
     const owner = await db.collection('users').findOne({ _id: ownerObjId });
     if (!owner) {
@@ -37,8 +38,8 @@ const createServer = async (req, res) => {
       serverName,
       description: description || '',
       serverIcon: '',
-      ownerId: ownerObjId,
-      members: [ownerObjId],
+      ownerId: ownerId,
+      members: [ownerId],
       roles: [],
       textChannels: [],
       voiceChannels: [],
@@ -200,4 +201,83 @@ const getUserServers = async (req, res) => {
   }
 };
 
-module.exports = { createServer, getServer, updateServer, deleteServer, getUserServers };
+const userHasServerAccess = (server, userObjectId) => {
+  if (!server || !userObjectId) {
+    return false;
+  }
+
+  const userIdString = userObjectId.toString();
+  const isOwner = server.serverOwnerUserID && String(server.serverOwnerUserID) === userIdString;
+  const isMember = (server.members || []).some((memberId) => String(memberId) === userIdString);
+
+  return isOwner || isMember;
+};
+
+// create a text channel in a server
+// POST /api/servers/:serverId/textChannels
+const createTextChannel = async (req, res) => {
+  const { serverId } = req.params;
+  const { channelName, topic, userId } = req.body;
+  let error = '';
+
+  try {
+    const serverObjId = toObjectId(serverId);
+    const creatorObjId = toObjectId(userId);
+
+    if (!serverObjId) {
+      error = 'Invalid server ID';
+      return res.status(400).json({ channel: null, error });
+    }
+
+    if (!creatorObjId) {
+      error = 'Invalid user ID';
+      return res.status(400).json({ channel: null, error });
+    }
+
+    const resolvedName = (channelName || '').trim();
+    if (!resolvedName) {
+      error = 'channelName is required';
+      return res.status(400).json({ channel: null, error });
+    }
+
+    const db = client.db('discord_clone');
+    const server = await db.collection('servers').findOne({ _id: serverObjId });
+
+    if (!server) {
+      error = 'Server not found';
+      return res.status(404).json({ channel: null, error });
+    }
+
+    const isOwner = server.ownerId && server.ownerId.toString() === creatorObjId.toString();
+    if (!isOwner) {
+      error = 'Only the server owner can create channels';
+      return res.status(403).json({ channel: null, error });
+    }
+
+    const channelDoc = {
+      channelID: new ObjectId(),
+      name: resolvedName,
+      topic: topic || '',
+      createdAt: new Date(),
+    };
+
+    await db.collection('servers').updateOne(
+      { _id: serverObjId },
+      { $push: { textChannels: channelDoc } }
+    );
+
+    return res.status(201).json({ channel: channelDoc, error: '' });
+  } catch (e) {
+    error = e.toString();
+    return res.status(500).json({ channel: null, error });
+  }
+};
+
+module.exports = { createServer, getServer, updateServer, deleteServer, getUserServers, createTextChannel };
+
+function toObjectId(id) {
+  if (!id || !ObjectId.isValid(id)) {
+    return null;
+  }
+  return new ObjectId(id);
+}
