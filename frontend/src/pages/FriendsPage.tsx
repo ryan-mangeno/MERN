@@ -52,12 +52,29 @@ const FriendsPage = () => {
     <div className="friends-screen">
       <div className="friends-glow" aria-hidden="true" />
       <div className="friends-panel">
-        <header className="friends-header">
-          <h1 className="friends-title">Friends</h1>
-          <div className="friends-status">
-            <span className="friends-dot" aria-hidden="true" />
-            {friends.length} online
+        <header className="friends-topbar">
+          <div className="friends-topbar-left">
+            <div className="friends-topbar-title">
+              <span className="friends-title-icon" aria-hidden="true">
+                F
+              </span>
+              <span className="friends-title-text">Friends</span>
+            </div>
+            <span className="friends-topbar-sep" aria-hidden="true">
+              •
+            </span>
+            <nav className="friends-topbar-tabs" aria-label="Friends tabs">
+              <button className="friends-tab friends-tab-active" type="button">
+                Online
+              </button>
+              <button className="friends-tab" type="button">
+                All
+              </button>
+            </nav>
           </div>
+          <button className="friends-addfriend" type="button">
+            Add Friend
+          </button>
         </header>
 
         <section className="friends-controls">
