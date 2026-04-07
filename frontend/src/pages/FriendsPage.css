@@ -1,32 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
 
 .friends-screen {
   position: fixed;
   inset: 0;
-  font-family: 'Space Grotesk', sans-serif;
-  color: #f6f1ea;
-  background: radial-gradient(circle at top left, #1f3b3b 0%, #0b1015 55%, #090a0f 100%);
+  font-family: 'Manrope', sans-serif;
+  color: #e6e9ee;
+  background: #1f232b;
   display: grid;
   place-items: center;
   overflow: hidden;
 }
 
 .friends-glow {
-  position: absolute;
-  inset: -10% 0 auto 0;
-  height: 50vh;
-  background: radial-gradient(circle at 20% 30%, rgba(79, 214, 192, 0.4), transparent 55%),
-    radial-gradient(circle at 70% 40%, rgba(255, 197, 110, 0.35), transparent 60%);
-  filter: blur(50px);
+  display: none;
 }
 
 .friends-container {
   width: min(96vw, 1200px);
   height: min(96vh, 820px);
-  background: rgba(12, 16, 20, 0.92);
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 40px 120px rgba(5, 10, 20, 0.7);
+  background: #2f3848;
+  border-radius: 18px;
+  border: 1px solid #2f3746;
+  box-shadow: 0 20px 50px rgba(10, 12, 18, 0.45);
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 0;
@@ -40,8 +35,9 @@
   grid-template-rows: auto auto 1fr;
   gap: 18px;
   padding: 24px;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid #2f3746;
   overflow: hidden;
+  background: #2f3848;
 }
 
 .chat-area {
@@ -50,6 +46,7 @@
   gap: 0;
   padding: 0;
   overflow: hidden;
+  background: #1f232b;
 }
 
 .friends-header {
@@ -60,8 +57,7 @@
 
 .friends-title {
   margin: 0;
-  font-family: 'Sora', sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   letter-spacing: -0.02em;
 }
 
@@ -69,19 +65,19 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #242c3a;
+  color: #9aa3b2;
+  font-size: 0.8rem;
 }
 
 .friends-dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #5ef2b7;
-  box-shadow: 0 0 12px rgba(94, 242, 183, 0.6);
+  background: #35c76a;
+  box-shadow: none;
 }
 
 .friends-controls {
@@ -93,25 +89,25 @@
 .friends-search {
   flex: 1;
   height: 44px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  border: 1px solid #2f3746;
+  background: #1b202a;
   color: inherit;
   padding: 0 16px;
   font-size: 0.95rem;
 }
 
 .friends-search::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #9aa3b2;
 }
 
 .friends-action {
   height: 44px;
   padding: 0 18px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: none;
-  background: #ffb663;
-  color: #1a0f06;
+  background: #35c76a;
+  color: #0b1215;
   font-weight: 600;
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease;
@@ -119,7 +115,7 @@
 
 .friends-action:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(255, 182, 99, 0.25);
+  box-shadow: 0 10px 20px rgba(53, 199, 106, 0.25);
 }
 
 .friends-list {
@@ -134,34 +130,34 @@
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #242c3a;
+  border: 1px solid #2f3746;
   animation: friends-fade 480ms ease forwards;
   cursor: pointer;
   transition: all 200ms ease;
 }
 
 .friend-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: #2f3848;
+  border-color: #3b4558;
 }
 
 .friend-card-active {
-  background: rgba(255, 182, 99, 0.15);
-  border-color: rgba(255, 182, 99, 0.3);
+  background: #3c4658;
+  border-color: #4a5666;
 }
 
 .friend-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6ed6c3, #ffc47b);
+  border-radius: 50%;
+  background: #3c4658;
   display: grid;
   place-items: center;
-  color: #1a0f06;
-  font-weight: 700;
+  color: #dbe2ea;
+  font-weight: 600;
   font-size: 1rem;
   overflow: hidden;
   flex-shrink: 0;
@@ -181,7 +177,7 @@
 .friend-meta p {
   margin: 4px 0 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #9aa3b2;
 }
 
 .friend-actions {
@@ -192,21 +188,21 @@
 .friends-icon {
   height: 36px;
   padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid #2f3746;
+  background: #2f3746;
   color: inherit;
   cursor: pointer;
 }
 
 .friends-icon:hover {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: #3b4558;
 }
 
 .friends-empty {
   text-align: center;
   padding: 48px 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #9aa3b2;
   display: grid;
   gap: 6px;
 }
@@ -214,13 +210,13 @@
 .friends-empty p {
   margin: 0;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: #e6e9ee;
 }
 
 /* Chat Area Styles */
 .chat-header {
   padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #2f3746;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -235,12 +231,12 @@
 .chat-avatar {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #6ed6c3, #ffc47b);
+  border-radius: 50%;
+  background: #3c4658;
   display: grid;
   place-items: center;
-  color: #1a0f06;
-  font-weight: 700;
+  color: #dbe2ea;
+  font-weight: 600;
   font-size: 1.2rem;
   overflow: hidden;
   flex-shrink: 0;
@@ -261,7 +257,7 @@
 .chat-friend-status {
   margin: 4px 0 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #9aa3b2;
 }
 
 .messages-container {
@@ -292,12 +288,12 @@
 .message-group-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #6ed6c3, #ffc47b);
+  border-radius: 50%;
+  background: #3c4658;
   display: grid;
   place-items: center;
-  color: #1a0f06;
-  font-weight: 700;
+  color: #dbe2ea;
+  font-weight: 600;
   font-size: 0.85rem;
   overflow: hidden;
   flex-shrink: 0;
@@ -322,7 +318,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(255, 255, 255, 0.6);
+  color: #9aa3b2;
 }
 
 .no-friend-selected {
@@ -330,7 +326,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(255, 255, 255, 0.5);
+  color: #9aa3b2;
   font-size: 1.1rem;
 }
 
@@ -366,23 +362,23 @@
 .message-username {
   font-weight: 600;
   font-size: 0.95rem;
-  color: #f6f1ea;
+  color: #e6e9ee;
 }
 
 .message-content {
   word-wrap: break-word;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.9);
+  color: #dbe2ea;
 }
 
 .message-time {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: #9aa3b2;
 }
 
 .message-input-area {
   padding: 20px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid #2f3746;
   display: flex;
   gap: 12px;
 }
@@ -390,25 +386,25 @@
 .message-input {
   flex: 1;
   height: 44px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  border: 1px solid #2f3746;
+  background: #1b202a;
   color: inherit;
   padding: 0 16px;
   font-size: 0.95rem;
 }
 
 .message-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #9aa3b2;
 }
 
 .message-send-btn {
   height: 44px;
   padding: 0 24px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: none;
-  background: #ffb663;
-  color: #1a0f06;
+  background: #35c76a;
+  color: #0b1215;
   font-weight: 600;
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease;
@@ -416,7 +412,7 @@
 
 .message-send-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(255, 182, 99, 0.25);
+  box-shadow: 0 10px 20px rgba(53, 199, 106, 0.25);
 }
 
 .message-send-btn:disabled {
