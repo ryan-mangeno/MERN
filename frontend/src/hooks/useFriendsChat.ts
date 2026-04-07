@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { authFetch } from '../utils/authFetch';
+import { initSocket, joinDMRoom, sendDMMessage, onReceiveMessage, offReceiveMessage, disconnectSocket } from '../services/socketService';
 
 interface Friend {
   _id: string;
@@ -36,8 +37,17 @@ export const useFriendsChat = () => {
     }
   }, []);
 
-  // Load friends list
+  // Initialize Socket.IO connection
   useEffect(() => {
+    if (!userId) return;
+
+    initSocket(userId);
+    console.log('Socket.IO initialized for user:', userId);
+
+    return () => {
+      // Keep socket alive even when hook unmounts, only disconnect on complete logout
+    };
+  }, [userId]);
     const loadFriends = async () => {
       if (!userId) {
         setError('No user logged in.');
@@ -80,7 +90,7 @@ export const useFriendsChat = () => {
     loadFriends();
   }, [userId]);
 
-  // Load messages when friend is selected
+  // Load messages when friend is selected and set up real-time listener
   useEffect(() => {
     const loadMessages = async () => {
       if (!selectedFriend || !userId) {
@@ -103,6 +113,9 @@ export const useFriendsChat = () => {
         }
 
         setMessages(payload.messages || []);
+
+        // Join the DM room for real-time updates
+        joinDMRoom(selectedFriend._id);
       } catch (err: any) {
         console.error('Error loading messages:', err);
         setMessages([]);
@@ -111,6 +124,20 @@ export const useFriendsChat = () => {
 
     loadMessages();
   }, [selectedFriend, userId]);
+
+  // Listen for incoming real-time messages
+  useEffect(() => {
+    const handleReceiveMessage = (incomingMessage: any) => {
+      console.log('Received real-time message:', incomingMessage);
+      setMessages(prevMessages => [...prevMessages, incomingMessage]);
+    };
+
+    onReceiveMessage(handleReceiveMessage);
+
+    return () => {
+      offReceiveMessage(handleReceiveMessage);
+    };
+  }, []);
 
   // Send message
   const sendMessage = async (messageInput: string): Promise<boolean> => {
@@ -137,7 +164,12 @@ export const useFriendsChat = () => {
       }
 
       if (payload.message) {
-        setMessages([...messages, payload.message]);
+        const newMessage = payload.message;
+        setMessages([...messages, newMessage]);
+        
+        // Emit message via Socket.IO for real-time updates to recipient
+        sendDMMessage(selectedFriend._id, newMessage);
+        
         return true;
       }
       return false;
