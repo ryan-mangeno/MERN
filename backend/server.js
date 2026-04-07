@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const MongoClient = require('mongodb').MongoClient;
 const url = process.env.MONGODB_URI;
@@ -51,4 +53,45 @@ app.use((req, res, next) =>
   next();
 });
 
-app.listen(5000); // start Node + Express server on port 5000
+// Create HTTP server for Socket.IO
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // Handle joining a DM room
+  socket.on('join-dm', (recipientId) => {
+    const roomId = [socket.handshake.auth.userId, recipientId].sort().join('-');
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined DM room ${roomId}`);
+  });
+
+  // Handle sending a direct message
+  socket.on('send-dm', (data) => {
+    const { recipientId, message } = data;
+    const roomId = [socket.handshake.auth.userId, recipientId].sort().join('-');
+    
+    // Broadcast message to room (both sender and recipient)
+    io.to(roomId).emit('receive-message', {
+      ...message,
+      senderId: socket.handshake.auth.userId,
+    });
+    
+    console.log(`Message sent in room ${roomId}`);
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+httpServer.listen(5000); // start HTTP server with Socket.IO on port 5000

@@ -269,8 +269,52 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 2px;
   padding: 24px;
+}
+
+.message-group {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.message-group-own {
+  align-items: flex-start;
+}
+
+.message-group-other {
+  align-items: flex-start;
+}
+
+.message-group-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6ed6c3, #ffc47b);
+  display: grid;
+  place-items: center;
+  color: #1a0f06;
+  font-weight: 700;
+  font-size: 0.85rem;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.message-group-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.message-group-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
 }
 
 .no-messages {
@@ -293,38 +337,47 @@
 .message {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-width: 70%;
+  gap: 2px;
+  width: 100%;
 }
 
 .message-sent {
-  align-self: flex-end;
+  align-self: auto;
 }
 
 .message-sent .message-content {
-  background: #ffb663;
-  color: #1a0f06;
+  color: #f6f1ea;
 }
 
 .message-received {
-  align-self: flex-start;
+  align-self: auto;
 }
 
 .message-received .message-content {
-  background: rgba(255, 255, 255, 0.1);
+  color: #f6f1ea;
+}
+
+.message-header {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.message-username {
+  font-weight: 600;
+  font-size: 0.95rem;
   color: #f6f1ea;
 }
 
 .message-content {
-  padding: 12px 16px;
-  border-radius: 16px;
   word-wrap: break-word;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .message-time {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  padding: 0 16px;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .message-input-area {

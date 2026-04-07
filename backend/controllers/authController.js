@@ -34,11 +34,11 @@ const register = async (req, res) => {
 
     const db = client.db('discord_clone');
 
-    // Check if user already exists in main users collection
+    // Check if user already exists in main users collection (case-insensitive username)
     const existingVerifiedUser = await db.collection('users').findOne({
       $or: [
         { email: email.toLowerCase() },
-        { username: username }
+        { username: { $regex: '^' + username.trim() + '$', $options: 'i' } }
       ]
     });
 
@@ -47,11 +47,11 @@ const register = async (req, res) => {
       return res.status(409).json({ userId: null, error });
     }
 
-    // Check if already pending verification
+    // Check if already pending verification (case-insensitive username)
     const existingUnverifiedUser = await db.collection('unverifiedUsers').findOne({
       $or: [
         { email: email.toLowerCase() },
-        { username: username }
+        { username: { $regex: '^' + username.trim() + '$', $options: 'i' } }
       ]
     });
 

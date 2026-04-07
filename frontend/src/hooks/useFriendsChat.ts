@@ -7,7 +7,7 @@ interface Friend {
   profilePicture?: string;
 }
 
-interface ChatMessage {
+export interface ChatMessage {
   _id?: string;
   senderId: string;
   recipientId: string;
@@ -88,7 +88,7 @@ export const useFriendsChat = () => {
 
       try {
         const response = await authFetch(
-          `api/chat/dm/${selectedFriend._id}?limit=50`
+          `api/chat/dms/${selectedFriend._id}/messages?limit=50`
         );
 
         if (!response.ok) {
@@ -117,7 +117,7 @@ export const useFriendsChat = () => {
     setIsSending(true);
     try {
       const response = await authFetch(
-        `api/chat/dm/${selectedFriend._id}`,
+        `api/chat/dms/${selectedFriend._id}/messages`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

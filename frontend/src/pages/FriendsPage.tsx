@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import './FriendsPage.css';
 import { useFriendsChat } from '../hooks/useFriendsChat';
 import AddFriendModal from '../components/AddFriendModal';
+import MessageGroup from '../components/MessageGroup';
+import { groupMessagesByUser } from '../utils/messageGrouping';
 
 const FriendsPage = () => {
   const {
@@ -20,6 +22,17 @@ const FriendsPage = () => {
   const [messageInput, setMessageInput] = useState('');
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [isAddingFriend, setIsAddingFriend] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Group messages by sender for continuous chat display
+  const messageGroups = useMemo(() => {
+    return groupMessagesByUser(messages);
+  }, [messages]);
 
   const handleSendMessage = async () => {
     const success = await sendMessage(messageInput);
@@ -125,18 +138,28 @@ const FriendsPage = () => {
                     <p>No messages yet. Start a conversation!</p>
                   </div>
                 ) : (
-                  messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`message ${msg.senderId === userId || msg.sender?.userId === userId ? 'message-sent' : 'message-received'}`}
-                    >
-                      <div className="message-content">{msg.message || msg.content}</div>
-                      <span className="message-time">
-                        {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : 'Just now'}
-                      </span>
-                    </div>
-                  ))
+                  messageGroups.map((group, idx) => {
+                    const isOwn = group.senderId === userId;
+                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                    const senderUsername = isOwn
+                      ? (userData.username || 'You')
+                      : (selectedFriend?.username || 'Unknown');
+                    const senderAvatar = isOwn
+                      ? userData.profilePicture
+                      : selectedFriend?.profilePicture;
+
+                    return (
+                      <MessageGroup
+                        key={idx}
+                        senderUsername={senderUsername}
+                        senderAvatar={senderAvatar}
+                        messages={group.messages}
+                        isOwn={isOwn}
+                      />
+                    );
+                  })
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="message-input-area">

@@ -164,7 +164,10 @@ const searchUserByUsername = async (req, res) => {
     }
 
     const db = client.db('discord_clone');
-    const user = await db.collection('users').findOne({ username: username.trim() });
+    // Use case-insensitive regex to find user by username
+    const user = await db.collection('users').findOne({
+      username: { $regex: '^' + username.trim() + '$', $options: 'i' }
+    });
 
     if (!user) {
       return res.status(404).json({ user: null, error: 'User not found' });
