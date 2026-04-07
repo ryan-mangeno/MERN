@@ -6,7 +6,6 @@ interface MessageGroupProps {
   senderAvatar?: string;
   messages: ChatMessage[];
   isOwn: boolean;
-  userId: string;
   onEditMessage: (messageId: string, newContent: string) => Promise<boolean>;
   onDeleteMessage: (messageId: string) => Promise<boolean>;
 }
@@ -38,7 +37,6 @@ const MessageGroup: React.FC<MessageGroupProps> = ({
   senderAvatar,
   messages,
   isOwn,
-  userId,
   onEditMessage,
   onDeleteMessage,
 }) => {

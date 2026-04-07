@@ -157,7 +157,6 @@ const FriendsPage = () => {
                         senderAvatar={senderAvatar}
                         messages={group.messages}
                         isOwn={isOwn}
-                        userId={userId}
                         onEditMessage={editMessage}
                         onDeleteMessage={deleteMessage}
                       />
