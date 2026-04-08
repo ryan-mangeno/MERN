@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './FriendsPanel.css';
 import { useFriendsChat } from '../hooks/useFriendsChat';
 import AddFriendModal from './AddFriendModal';
+import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
 
 interface Friend {
   _id: string;
@@ -119,7 +120,7 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
             >
               <div className="friend-avatar">
                 {friend.profilePicture ? (
-                  <img src={friend.profilePicture} alt={friend.username} />
+                  <img src={normalizeProfilePicturePath(friend.profilePicture)} alt={friend.username} />
                 ) : (
                   <span>{(friend.username || '?')[0]}</span>
                 )}
@@ -139,7 +140,7 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
             >
               <div className="friend-avatar">
                 {request.profilePicture ? (
-                  <img src={request.profilePicture} alt={request.username} />
+                  <img src={normalizeProfilePicturePath(request.profilePicture)} alt={request.username} />
                 ) : (
                   <span>{(request.username || '?')[0]}</span>
                 )}

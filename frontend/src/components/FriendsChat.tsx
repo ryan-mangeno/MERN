@@ -3,6 +3,7 @@ import './FriendsChat.css';
 import { useFriendsChat } from '../hooks/useFriendsChat';
 import MessageGroup from './MessageGroup';
 import { groupMessagesByUser } from '../utils/messageGrouping';
+import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
 
 interface Friend {
   _id: string;
@@ -80,7 +81,7 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
                 <div key={request._id} className="request-item">
                   <div className="request-avatar">
                     {request.profilePicture ? (
-                      <img src={request.profilePicture} alt={request.username} />
+                      <img src={normalizeProfilePicturePath(request.profilePicture)} alt={request.username} />
                     ) : (
                       <span>{(request.username || '?')[0]}</span>
                     )}
@@ -126,7 +127,7 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
             <div className="chat-friend-info">
               <div className="chat-friend-avatar">
                 {selectedFriend.profilePicture ? (
-                  <img src={selectedFriend.profilePicture} alt={selectedFriend.username} />
+                  <img src={normalizeProfilePicturePath(selectedFriend.profilePicture)} alt={selectedFriend.username} />
                 ) : (
                   <span>{(selectedFriend.username || '?')[0]}</span>
                 )}
@@ -148,7 +149,7 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
                 <MessageGroup
                   key={`${group.senderId}-${index}`}
                   senderUsername={isOwnMessage ? currentUsername : selectedFriend.username}
-                  senderAvatar={isOwnMessage ? undefined : selectedFriend.profilePicture}
+                  senderAvatar={isOwnMessage ? undefined : normalizeProfilePicturePath(selectedFriend.profilePicture)}
                   messages={group.messages}
                   isOwn={isOwnMessage}
                   onEditMessage={editMessage}

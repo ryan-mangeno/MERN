@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import './FriendsPage.css';
 import { useFriendsChat } from '../hooks/useFriendsChat';
+import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
 
 const RequestsPage = () => {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ const RequestsPage = () => {
             >
               <div className="friend-avatar">
                 {request.profilePicture ? (
-                  <img src={request.profilePicture} alt={request.username} />
+                  <img src={normalizeProfilePicturePath(request.profilePicture)} alt={request.username} />
                 ) : (
                   <span>{(request.username || '?')[0]}</span>
                 )}
