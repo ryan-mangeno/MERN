@@ -269,6 +269,80 @@
   transform: scale(0.95);
 }
 
+/* All Friends View */
+.all-friends-area {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  background: #2f3848;
+}
+
+.all-friends-header {
+  padding: 20px;
+  background: #222a37;
+  border-bottom: 1px solid #2f3746;
+}
+
+.all-friends-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #dbe2ea;
+}
+
+.all-friends-list {
+  overflow-y: auto;
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.friend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #242c3a;
+  border: 1px solid #2f3746;
+  border-radius: 10px;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.friend-item:hover {
+  background: #2f3848;
+  border-color: #3b4558;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: #3c4658;
+  display: grid;
+  place-items: center;
+  color: #dbe2ea;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.friend-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.friend-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #dbe2ea;
+  font-weight: 600;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .chat-header {

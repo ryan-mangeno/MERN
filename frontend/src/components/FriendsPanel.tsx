@@ -8,6 +8,7 @@ interface Friend {
   _id: string;
   username: string;
   profilePicture?: string;
+  online?: boolean;
 }
 
 interface FriendsPanelProps {
@@ -97,21 +98,35 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
           <div className="friends-empty">{error}</div>
         )}
         
-        {!loading && !error && friends.length === 0 && (
+        {!loading && !error && friends.length === 0 && activeTab !== 'requests' && (
           <div className="friends-empty">
             <p>No friends yet.</p>
             <span>Once you add friends, they will show up here.</span>
           </div>
         )}
 
-        {!loading && !error && activeTab === 'requests' && pendingRequests.length === 0 && (
-          <div className="friends-empty">
-            <p>No pending requests.</p>
-            <span>Friend requests will appear here.</span>
-          </div>
-        )}
+        {!loading && !error && activeTab === 'online' &&
+          friends.map((friend) => (
+            <article
+              className={`friend-card ${selectedFriend?._id === friend._id ? 'friend-card-active' : ''}`}
+              key={friend._id}
+              onClick={() => onSelectFriend(friend)}
+            >
+              <div className="friend-avatar">
+                {friend.profilePicture ? (
+                  <img src={normalizeProfilePicturePath(friend.profilePicture)} alt={friend.username} />
+                ) : (
+                  <span>{(friend.username || '?')[0]}</span>
+                )}
+              </div>
+              <div className="friend-meta">
+                <h2>{friend.username || 'Unknown user'}</h2>
+                <p>{friend.online ? 'Available' : 'Offline'}</p>
+              </div>
+            </article>
+          ))}
 
-        {!loading && !error && activeTab !== 'requests' &&
+        {!loading && !error && activeTab === 'all' &&
           friends.map((friend) => (
             <article
               className={`friend-card ${selectedFriend?._id === friend._id ? 'friend-card-active' : ''}`}
@@ -132,25 +147,69 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
             </article>
           ))}
 
-        {!loading && !error && activeTab === 'requests' &&
-          pendingRequests.map((request) => (
-            <article
-              className="friend-card friend-request-card"
-              key={request._id}
-            >
-              <div className="friend-avatar">
-                {request.profilePicture ? (
-                  <img src={normalizeProfilePicturePath(request.profilePicture)} alt={request.username} />
-                ) : (
-                  <span>{(request.username || '?')[0]}</span>
+        {!loading && !error && activeTab === 'requests' && (
+          <>
+            {pendingRequests.length === 0 && friends.length === 0 ? (
+              <div className="friends-empty">
+                <p>No pending requests.</p>
+                <span>Friend requests will appear here.</span>
+              </div>
+            ) : (
+              <>
+                {pendingRequests.length > 0 && (
+                  <>
+                    {pendingRequests.map((request) => (
+                      <article
+                        className="friend-card friend-request-card"
+                        key={request._id}
+                      >
+                        <div className="friend-avatar">
+                          {request.profilePicture ? (
+                            <img src={normalizeProfilePicturePath(request.profilePicture)} alt={request.username} />
+                          ) : (
+                            <span>{(request.username || '?')[0]}</span>
+                          )}
+                        </div>
+                        <div className="friend-meta">
+                          <h2>{request.username || 'Unknown user'}</h2>
+                          <p>wants to be friends</p>
+                        </div>
+                      </article>
+                    ))}
+                  </>
                 )}
-              </div>
-              <div className="friend-meta">
-                <h2>{request.username || 'Unknown user'}</h2>
-                <p>wants to be friends</p>
-              </div>
-            </article>
-          ))}
+                {friends.length > 0 && (
+                  <>
+                    <div style={{ paddingTop: '16px', borderTop: '1px solid #2f3746' }}>
+                      <h3 style={{ fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', color: '#72767d', margin: '8px 12px 8px 12px' }}>
+                        All Friends
+                      </h3>
+                    </div>
+                    {friends.map((friend) => (
+                      <article
+                        className={`friend-card ${selectedFriend?._id === friend._id ? 'friend-card-active' : ''}`}
+                        key={friend._id}
+                        onClick={() => onSelectFriend(friend)}
+                      >
+                        <div className="friend-avatar">
+                          {friend.profilePicture ? (
+                            <img src={normalizeProfilePicturePath(friend.profilePicture)} alt={friend.username} />
+                          ) : (
+                            <span>{(friend.username || '?')[0]}</span>
+                          )}
+                        </div>
+                        <div className="friend-meta">
+                          <h2>{friend.username || 'Unknown user'}</h2>
+                          <p>Available</p>
+                        </div>
+                      </article>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
       </section>
 
       {showAddFriendModal && (

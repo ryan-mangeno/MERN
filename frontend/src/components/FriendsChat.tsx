@@ -15,9 +15,10 @@ interface FriendsChatProps {
   selectedFriend: Friend | null;
   currentUserId: string;
   activeTab: 'online' | 'all' | 'requests';
+  onSelectFriend?: (friend: Friend) => void;
 }
 
-const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatProps) => {
+const FriendsChat = ({ selectedFriend, currentUserId, activeTab, onSelectFriend }: FriendsChatProps) => {
   const {
     messages,
     loading,
@@ -110,6 +111,9 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
     }
   };
 
+  // Get friends list from hook
+  const { friends } = useFriendsChat();
+
   return (
     <div className="chat-area">
       {activeTab === 'requests' ? (
@@ -168,7 +172,7 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
           )}
         </section>
       ) : selectedFriend ? (
-        // Chat View
+        // Chat View (shows for both 'all' and 'online' tabs when friend is selected)
         <>
           <header className="chat-header">
             <div className="chat-friend-info">
@@ -237,6 +241,40 @@ const FriendsChat = ({ selectedFriend, currentUserId, activeTab }: FriendsChatPr
             </button>
           </footer>
         </>
+      ) : activeTab === 'all' ? (
+        // All Friends View
+        <section className="all-friends-area">
+          <div className="all-friends-header">
+            <h2>Friends</h2>
+          </div>
+          {friends.length === 0 ? (
+            <div className="chat-empty">
+              <p>No friends yet</p>
+            </div>
+          ) : (
+            <div className="all-friends-list">
+              {friends.map((friend) => (
+                <div
+                  key={friend._id}
+                  className="friend-item"
+                  onClick={() => onSelectFriend?.(friend)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="friend-avatar">
+                    {friend.profilePicture ? (
+                      <img src={normalizeProfilePicturePath(friend.profilePicture)} alt={friend.username} />
+                    ) : (
+                      <span>{(friend.username || '?')[0]}</span>
+                    )}
+                  </div>
+                  <div className="friend-info">
+                    <h3>{friend.username}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       ) : (
         <div className="chat-empty">
           <p>Select a friend to start chatting</p>

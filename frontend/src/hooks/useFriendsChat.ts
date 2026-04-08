@@ -18,6 +18,7 @@ interface Friend {
   _id: string;
   username: string;
   profilePicture?: string;
+  online?: boolean;
 }
 
 export interface ChatMessage {

@@ -9,6 +9,7 @@ interface Friend {
   _id: string;
   username: string;
   profilePicture?: string;
+  online?: boolean;
 }
 
 const FriendsPage = () => {
@@ -64,9 +65,10 @@ const FriendsPage = () => {
     }
   }, [friendId, friends]);
 
-  // When friend is selected, navigate to their URL
+  // When friend is selected, navigate to their URL and switch away from All tab
   const handleSelectFriend = (friend: Friend) => {
     setSelectedFriend(friend);
+    setActiveTab('online');
     navigate(`/friends/${friend._id}`);
   };
 
@@ -79,10 +81,14 @@ const FriendsPage = () => {
         activeTab={activeTab}
         onTabChange={(tab) => {
           setActiveTab(tab);
-          if (tab === 'requests') {
-            navigate('/friends/requests');
-          } else {
+          if (tab === 'all') {
+            setSelectedFriend(null);
             navigate('/friends');
+          } else if (tab === 'online') {
+            setSelectedFriend(null);
+            navigate('/friends');
+          } else if (tab === 'requests') {
+            navigate('/friends/requests');
           }
         }}
       />
@@ -90,6 +96,7 @@ const FriendsPage = () => {
         selectedFriend={selectedFriend} 
         currentUserId={currentUserId}
         activeTab={activeTab}
+        onSelectFriend={handleSelectFriend}
       />
     </div>
   );
