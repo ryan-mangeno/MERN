@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { verifyToken } = require('../middleware/tokenMiddleware');
 
 const {
   createServer,
@@ -7,6 +8,7 @@ const {
   updateServer,
   deleteServer,
   createTextChannel,
+  deleteTextChannel,
 } = require('../controllers/serverController');
 
 const {
@@ -35,17 +37,18 @@ const {
 } = require('../controllers/voiceChannelController');
 
 // server crud
-router.post('/', createServer);
-router.get('/:serverId', getServer);
-router.patch('/:serverId', updateServer);
-router.delete('/:serverId', deleteServer);
+router.post('/', verifyToken, createServer);
+router.get('/:serverId', verifyToken, getServer);
+router.patch('/:serverId', verifyToken, updateServer);
+router.delete('/:serverId', verifyToken, deleteServer);
 
 // text channels
-router.post('/:serverId/textChannels', createTextChannel);
+router.post('/:serverId/textChannels', verifyToken, createTextChannel);
+router.delete('/:serverId/textChannels/:channelId', verifyToken, deleteTextChannel);
 
 // server membership
-router.post('/:serverId/join', joinServer);
-router.delete('/:serverId/leave', leaveServer);
+router.post('/:serverId/join', verifyToken, joinServer);
+router.delete('/:serverId/leave', verifyToken, leaveServer);
 router.get('/:serverId/members', getServerMembers);
 router.patch('/:serverId/profile/:userId', updateServerProfile);
 
