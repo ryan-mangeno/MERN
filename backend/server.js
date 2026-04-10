@@ -9,9 +9,8 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const socketManager = require('./utils/socketManager');
-const { ObjectId } = require('mongodb');
-
 const { MongoClient, ObjectId } = require('mongodb');
+
 const url = process.env.MONGODB_URI;
 
 const client = new MongoClient(url);
