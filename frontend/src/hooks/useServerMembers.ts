@@ -75,6 +75,10 @@ export const useServerMembers = (serverId?: string): UseServerMembersResult => {
     // ── Real-time presence via Socket.IO ──────────────────────────────────────
     const socket = getSocket();
 
+    if (!socket) {
+      return;
+    }
+
     const handleOnline = ({ userId }: { userId: string }) => {
       setOnlineUserIds(prev => new Set([...prev, userId]));
     };
