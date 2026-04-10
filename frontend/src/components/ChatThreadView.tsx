@@ -61,7 +61,7 @@ function ChatThreadView({
     setMessages([]);
 
     if (thread.kind === 'server' && thread.serverId && thread.channelId) {
-      navigate(`/chat/server/${thread.serverId}/channel/${thread.channelId}`);
+      navigate(`/chat/server/${thread.serverId}/${thread.channelId}`);
       return;
     }
 

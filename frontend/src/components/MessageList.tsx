@@ -90,6 +90,17 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
     }
   }, [isLoadingMore]);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Scroll to bottom if user hasn't scrolled up or this is the initial load
+    setTimeout(() => {
+      el.scrollTop = el.scrollHeight;
+    }, 0);
+  }, [messages.length]);
+
   const getAvatarSrc = (profilePicture?: string): string => {
     if (!profilePicture) {
       return '';

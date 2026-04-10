@@ -1,5 +1,6 @@
 const { MongoClient, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const socketManager = require('../utils/socketManager');
 const {
 	getCursorPage,
 	buildMessageScopeQuery,
@@ -220,9 +221,14 @@ const sendMessage = async (req, res) => {
 
 		const result = await db.collection('messages').insertOne(messageDoc);
 
+		const decoratedMessage = decorateServerMessage({ ...messageDoc, _id: result.insertedId }, senderProfile);
+
+		// Broadcast the message to all users in this server channel via WebSocket
+		socketManager.broadcastMessageToServerChannel(serverId, channelId, decoratedMessage);
+
 		return res.status(201).json({
 			thread,
-			message: decorateServerMessage({ ...messageDoc, _id: result.insertedId }, senderProfile),
+			message: decoratedMessage,
 			error: '',
 		});
 	} catch (e) {
@@ -375,6 +381,13 @@ const updateMessage = async (req, res) => {
 			return res.status(404).json({ message: null, error: 'Message not found after update' });
 		}
 
+		// Broadcast the update to all users in this server channel via WebSocket
+		socketManager.broadcastMessageToServerChannel(serverId, channelId, {
+			type: 'message-updated',
+			messageId: messageObjId.toString(),
+			message: updatedMessageDoc,
+		});
+
 		return res.status(200).json({ message: updatedMessageDoc, error: '' });
 	} catch (e) {
 		return res.status(500).json({ message: null, error: e.toString() });
@@ -431,6 +444,12 @@ const deleteMessage = async (req, res) => {
 		}
 
 		await db.collection('messages').deleteOne({ _id: messageObjId });
+
+		// Broadcast the deletion to all users in this server channel via WebSocket
+		socketManager.broadcastMessageToServerChannel(serverId, channelId, {
+			type: 'message-deleted',
+			messageId: messageObjId.toString(),
+		});
 
 		return res.status(200).json({ message: 'Message deleted successfully', error: '' });
 	} catch (e) {

@@ -2,6 +2,8 @@ import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 let connectionState = 0; // Counter to trigger useEffect refetch on reconnect
+let messageCallbacks: Set<(message: any) => void> = new Set();
+let currentServerSubscription: { serverId: string; channelId: string } | null = null;
 
 const getSocketUrl = () => {
   const isDev = window.location.hostname === 'localhost';
@@ -11,10 +13,19 @@ const getSocketUrl = () => {
 export const getConnectionState = () => connectionState;
 
 export const initSocket = (userId: string) => {
+  // If socket already exists and is connected, return it
   if (socket?.connected) {
     return socket;
   }
 
+  // If socket exists but is disconnected, reconnect it
+  if (socket && !socket.connected) {
+    console.log('[socketService] Reconnecting existing socket...');
+    socket.connect();
+    return socket;
+  }
+
+  // Create new socket connection
   socket = io(getSocketUrl(), {
     auth: {
       userId: userId
@@ -28,6 +39,13 @@ export const initSocket = (userId: string) => {
   socket.on('connect', () => {
     console.log('[socketService] Socket connected');
     connectionState++; // Increment to trigger useEffect refetch
+    
+    // Rejoin the current channel subscription if one exists
+    if (currentServerSubscription) {
+      const { serverId, channelId } = currentServerSubscription;
+      console.log('[socketService] Rejoining channel after reconnect:', serverId, channelId);
+      socket?.emit('join-server-channel', { serverId, channelId });
+    }
   });
 
   socket.on('disconnect', () => {
@@ -37,10 +55,30 @@ export const initSocket = (userId: string) => {
   socket.on('reconnect', () => {
     console.log('[socketService] Socket reconnected');
     connectionState++; // Increment to trigger useEffect refetch
+    
+    // Rejoin the current channel subscription if one exists
+    if (currentServerSubscription) {
+      const { serverId, channelId } = currentServerSubscription;
+      console.log('[socketService] Rejoining channel after reconnect:', serverId, channelId);
+      socket?.emit('join-server-channel', { serverId, channelId });
+    }
   });
 
   socket.on('connect_error', (_error) => {
     console.error('[socketService] Connection error:', _error);
+  });
+
+  // Global socket listener for messages - this persists across component mounts/unmounts
+  socket.on('receive-message', (message: any) => {
+    console.log('[socketService] Received real-time message:', message);
+    // Notify all registered callbacks
+    messageCallbacks.forEach(callback => {
+      try {
+        callback(message);
+      } catch (err) {
+        console.error('[socketService] Error in message callback:', err);
+      }
+    });
   });
 
   return socket;
@@ -52,7 +90,18 @@ export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
+    messageCallbacks.clear();
+    currentServerSubscription = null;
   }
+};
+
+export const resetSocket = () => {
+  if (socket) {
+    socket.disconnect();
+  }
+  socket = null;
+  messageCallbacks.clear();
+  currentServerSubscription = null;
 };
 
 export const joinDMRoom = (recipientId: string) => {
@@ -67,16 +116,40 @@ export const sendDMMessage = (recipientId: string, message: any) => {
   }
 };
 
-export const onReceiveMessage = (callback: (message: any) => void) => {
-  if (socket) {
-    socket.on('receive-message', callback);
+export const joinServerChannel = (serverId: string, channelId: string) => {
+  // Track this as the current subscription so we can rejoin on reconnect
+  currentServerSubscription = { serverId, channelId };
+  
+  if (socket?.connected) {
+    socket.emit('join-server-channel', { serverId, channelId });
+    console.log(`[socketService] ✅ Emitted join-server-channel: ${serverId}/${channelId}`);
+  } else {
+    console.warn(`[socketService] ⚠️ Socket not connected when trying to join channel`);
   }
 };
 
-export const offReceiveMessage = (callback: (message: any) => void) => {
-  if (socket) {
-    socket.off('receive-message', callback);
+export const leaveServerChannel = (serverId: string, channelId: string) => {
+  // Clear subscription tracking
+  if (currentServerSubscription?.serverId === serverId && currentServerSubscription?.channelId === channelId) {
+    currentServerSubscription = null;
   }
+  
+  if (socket?.connected) {
+    socket.emit('leave-server-channel', { serverId, channelId });
+    console.log(`[socketService] ✅ Emitted leave-server-channel: ${serverId}/${channelId}`);
+  } else {
+    console.warn(`[socketService] ⚠️ Socket not connected when trying to leave channel`);
+  }
+};
+
+export const onReceiveMessage = (callback: (message: any) => void) => {
+  messageCallbacks.add(callback);
+  console.log(`[socketService] Registered message callback, total callbacks: ${messageCallbacks.size}`);
+};
+
+export const offReceiveMessage = (callback: (message: any) => void) => {
+  messageCallbacks.delete(callback);
+  console.log(`[socketService] Unregistered message callback, remaining callbacks: ${messageCallbacks.size}`);
 };
 
 // Friend request handlers

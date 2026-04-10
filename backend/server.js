@@ -142,6 +142,22 @@ io.on('connection', async (socket) => {
     console.log('[Socket.IO] ❌ No userId in auth, connection not tracked');
   }
 
+  // Handle joining a server channel room
+  socket.on('join-server-channel', (data) => {
+    const { serverId, channelId } = data;
+    const roomId = `server-${serverId}-channel-${channelId}`;
+    socket.join(roomId);
+    console.log(`[Socket.IO] Socket ${socket.id} joined server channel room: ${roomId}`);
+  });
+
+  // Handle leaving a server channel room
+  socket.on('leave-server-channel', (data) => {
+    const { serverId, channelId } = data;
+    const roomId = `server-${serverId}-channel-${channelId}`;
+    socket.leave(roomId);
+    console.log(`[Socket.IO] Socket ${socket.id} left server channel room: ${roomId}`);
+  });
+
   // Handle joining a DM room
   socket.on('join-dm', (recipientId) => {
     const roomId = [socket.handshake.auth.userId, recipientId].sort().join('-');

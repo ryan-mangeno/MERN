@@ -59,6 +59,22 @@ const notifyUserOffline = (userId, friends) => {
   });
 };
 
+const broadcastMessageToServerChannel = (serverId, channelId, message) => {
+  // Broadcast message to all users in a server channel room
+  const roomId = `server-${serverId}-channel-${channelId}`;
+  if (io) {
+    console.log(`[socketManager] Broadcasting to room ${roomId}:`, {
+      messageId: message._id || message.id,
+      type: message.type,
+      content: message.content || message.message,
+    });
+    io.to(roomId).emit('receive-message', message);
+    console.log(`[socketManager] ✅ Socket.emit('receive-message') to room: ${roomId}`);
+  } else {
+    console.log(`[socketManager] ❌ Socket.IO not initialized, cannot broadcast to ${roomId}`);
+  }
+};
+
 module.exports = {
   setSocketIO,
   getIO,
@@ -67,5 +83,6 @@ module.exports = {
   notifyFriendRequestAccepted,
   notifyFriendRequestDeclined,
   notifyUserOnline,
-  notifyUserOffline
+  notifyUserOffline,
+  broadcastMessageToServerChannel
 };

@@ -8,9 +8,10 @@ import InviteToServerModal from '../components/InviteToServerModal';
 import MessageComposer from '../components/MessageComposer';
 import MessageList from '../components/MessageList';
 import { useChatThread } from '../hooks/useChatThread';
+import { initSocket, joinServerChannel, leaveServerChannel } from '../services/socketService';
 
 const ServerPage = () => {
-  const { serverId } = useParams<{ serverId: string }>();
+  const { serverId, channelId } = useParams<{ serverId: string; channelId?: string }>();
   const navigate = useNavigate();
   const [server, setServer] = useState<Server | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,18 +21,17 @@ const ServerPage = () => {
   const [showCreateChannelModal, setShowCreateChannelModal] = useState(false);
   const [channelToDelete, setChannelToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingChannel, setIsDeletingChannel] = useState(false);
-  const [selectedChannel, setSelectedChannel] = useState<{ id: string; name: string } | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showServerMenu, setShowServerMenu] = useState(false);
 
-  // Use chat thread hook for the selected channel
+  // Use chat thread hook for the selected channel from URL
   const {
     messages,
     loading: messagesLoading,
     sendMessage,
     editMessage,
     removeMessage,
-  } = useChatThread(serverId, selectedChannel?.id, undefined);
+  } = useChatThread(serverId, channelId, undefined);
 
   // Get current user ID from localStorage
   const currentUserId = useMemo(() => {
@@ -56,6 +56,23 @@ const ServerPage = () => {
       loadServer(serverId);
     }
   }, [serverId]);
+
+  // Initialize socket and manage channel room subscriptions
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // Initialize socket connection
+    initSocket(currentUserId);
+
+    // Join/leave server channel when channelId changes
+    if (channelId && serverId) {
+      joinServerChannel(serverId, channelId);
+
+      return () => {
+        leaveServerChannel(serverId, channelId);
+      };
+    }
+  }, [channelId, serverId, currentUserId]);
 
   const loadServer = async (id: string) => {
     try {
@@ -100,8 +117,9 @@ const ServerPage = () => {
     }
   };
 
-  const handleChannelClick = (channelId: string, channelName: string) => {
-    setSelectedChannel({ id: channelId, name: channelName });
+  const handleChannelClick = (channelId: string) => {
+    // Navigate to the new URL with channelId
+    navigate(`/chat/server/${serverId}/${channelId}`);
   };
 
   const handleDeleteChannel = async () => {
@@ -111,9 +129,9 @@ const ServerPage = () => {
       setIsDeletingChannel(true);
       await deleteTextChannel(serverId, channelToDelete.id, currentUserId);
       
-      // If we're deleting the currently selected channel, deselect it
-      if (selectedChannel?.id === channelToDelete.id) {
-        setSelectedChannel(null);
+      // If we're deleting the currently viewed channel, navigate back to server overview
+      if (channelId === channelToDelete.id) {
+        navigate(`/chat/server/${serverId}`);
       }
       
       // Reload the server to get updated channel list
@@ -219,8 +237,8 @@ const ServerPage = () => {
               server.textChannels.map((channel: any) => (
                 <div key={channel._id || channel.channelID} className="channel-item-wrapper">
                   <div 
-                    className={`channel-item ${selectedChannel?.id === (channel.channelID || channel._id) ? 'active' : ''}`}
-                    onClick={() => handleChannelClick(channel.channelID || channel._id, channel.name)}
+                    className={`channel-item ${channelId === (channel.channelID || channel._id) ? 'active' : ''}`}
+                    onClick={() => handleChannelClick(channel.channelID || channel._id)}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41001 9L8.35001 15H14.35L15.41 9H9.41001Z" />
@@ -295,13 +313,13 @@ const ServerPage = () => {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <path d="M5.88657 21C5.57547 21 5.3399 20.7189 5.39427 20.4126L6.00001 17H2.59511C2.28449 17 2.04905 16.7198 2.10259 16.4138L2.27759 15.4138C2.31946 15.1746 2.52722 15 2.77011 15H6.35001L7.41001 9H4.00511C3.69449 9 3.45905 8.71977 3.51259 8.41381L3.68759 7.41381C3.72946 7.17456 3.93722 7 4.18011 7H7.76001L8.39677 3.41262C8.43914 3.17391 8.64664 3 8.88907 3H9.87344C10.1845 3 10.4201 3.28107 10.3657 3.58738L9.76001 7H15.76L16.3968 3.41262C16.4391 3.17391 16.6466 3 16.8891 3H17.8734C18.1845 3 18.4201 3.28107 18.3657 3.58738L17.76 7H21.1649C21.4755 7 21.711 7.28023 21.6574 7.58619L21.4824 8.58619C21.4406 8.82544 21.2328 9 20.9899 9H17.41L16.35 15H19.7549C20.0655 15 20.301 15.2802 20.2474 15.5862L20.0724 16.5862C20.0306 16.8254 19.8228 17 19.5799 17H16L15.3632 20.5874C15.3209 20.8261 15.1134 21 14.8709 21H13.8866C13.5755 21 13.3399 20.7189 13.3943 20.4126L14 17H8.00001L7.36325 20.5874C7.32088 20.8261 7.11337 21 6.87094 21H5.88657ZM9.41001 9L8.35001 15H14.35L15.41 9H9.41001Z" />
             </svg>
-            <span className="channel-name">{selectedChannel ? selectedChannel.name : 'Select a channel'}</span>
-            {selectedChannel && <div className="channel-description">Welcome to #{selectedChannel.name}!</div>}
+            <span className="channel-name">{channelId ? server?.textChannels?.find(ch => (ch.channelID || ch._id) === channelId)?.name || 'Channel' : 'Select a channel'}</span>
+            {channelId && <div className="channel-description">Welcome to #{server?.textChannels?.find(ch => (ch.channelID || ch._id) === channelId)?.name}!</div>}
           </div>
         </div>
 
         <div className="server-messages">
-          {selectedChannel ? (
+          {channelId ? (
             <>
               {messagesLoading && <p className="server-loading">Loading messages...</p>}
               <MessageList
@@ -321,7 +339,7 @@ const ServerPage = () => {
           )}
         </div>
 
-        {selectedChannel ? (
+        {channelId ? (
           <MessageComposer
             disabled={false}
             onSend={sendMessage}
