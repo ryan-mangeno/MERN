@@ -6,7 +6,6 @@ const {
   getServer,
   updateServer,
   deleteServer,
-  createTextChannel,
 } = require('../controllers/serverController');
 
 const {
@@ -35,6 +34,13 @@ const {
   joinVoiceChannel,
   leaveVoiceChannel,
 } = require('../controllers/voiceChannelController');
+
+const {
+  createTextChannel,
+  getTextChannels,
+  updateTextChannel,
+  deleteTextChannel,
+} = require('../controllers/textChannelsController');
 
 // server crud
 router.post('/', createServer);
@@ -74,5 +80,11 @@ router.patch('/:serverId/voiceChannels/:channelId', updateVoiceChannel);
 router.delete('/:serverId/voiceChannels/:channelId', deleteVoiceChannel);
 router.post('/:serverId/voiceChannels/:channelId/join', joinVoiceChannel);
 router.delete('/:serverId/voiceChannels/:channelId/leave', leaveVoiceChannel);
+
+// text channels crud
+router.post('/:serverId/textChannels', createTextChannel);
+router.get('/:serverId/textChannels', getTextChannels);
+router.patch('/:serverId/textChannels/:channelId', updateTextChannel);
+router.delete('/:serverId/textChannels/:channelId', deleteTextChannel);
 
 module.exports = router;
