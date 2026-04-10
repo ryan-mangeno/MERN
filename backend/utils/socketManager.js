@@ -15,17 +15,11 @@ const getUserSocketIds = (userId) => {
 
 const emitToUser = (userId, event, data) => {
   const socketSet = getUserSocketIds(userId);
-  console.log(`[socketManager] Attempting to emit ${event} to user ${userId}`);
-  console.log(`[socketManager] Socket IDs found: ${socketSet ? socketSet.size : 0}`);
   
   if (socketSet && socketSet.size > 0 && io) {
-    console.log(`[socketManager] emitToUser - targeting user ${userId} with ${socketSet.size} socket(s) for event: ${event}`);
     socketSet.forEach(socketId => {
       io.to(socketId).emit(event, data);
-      console.log(`[socketManager] ✅ Emitted ${event} to socket ${socketId} for user ${userId}, data:`, data);
     });
-  } else {
-    console.log(`[socketManager] ❌ FAILED to emit ${event}: userId ${userId} has no active sockets`);
   }
 };
 
@@ -63,21 +57,14 @@ const broadcastMessageToServerChannel = (serverId, channelId, message) => {
   // Broadcast message to all users in a server channel room
   const roomId = `server-${serverId}-channel-${channelId}`;
   if (io) {
-    console.log(`[socketManager] Broadcasting to room ${roomId}:`, {
-      messageId: message._id || message.id,
-      type: message.type,
-      content: message.content || message.message,
-    });
     io.to(roomId).emit('receive-message', message);
-    console.log(`[socketManager] ✅ Socket.emit('receive-message') to room: ${roomId}`);
-  } else {
-    console.log(`[socketManager] ❌ Socket.IO not initialized, cannot broadcast to ${roomId}`);
   }
 };
 
 module.exports = {
   setSocketIO,
   getIO,
+  getUserSocketIds,
   emitToUser,
   notifyFriendRequest,
   notifyFriendRequestAccepted,

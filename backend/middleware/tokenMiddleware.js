@@ -9,10 +9,7 @@ exports.verifyToken = (req, res, next) => {
     const bodyToken = req.body?.jwtToken;
     const jwtToken = bearerToken || bodyToken;
 
-    console.log('verifyToken middleware - authHeader present:', !!authHeader, 'bearerToken present:', !!bearerToken);
-
     if (!jwtToken) {
-      console.error('No token provided');
       return res.status(401).json({ 
         error: 'No token provided', 
         jwtToken: '' 
@@ -23,7 +20,6 @@ exports.verifyToken = (req, res, next) => {
     try {
       verifiedPayload = jwt.verify(jwtToken, process.env.JWT_SECRET);
     } catch (e) {
-      console.error('Token verification failed:', e.message);
       return res.status(401).json({ 
         error: e.name === 'TokenExpiredError' ? 'Token has expired' : 'Invalid token', 
         jwtToken: '' 
@@ -41,8 +37,6 @@ exports.verifyToken = (req, res, next) => {
     req.email = verifiedPayload.email;
     req.username = verifiedPayload.username;
 
-    console.log('Token verified for userId:', req.user.userId);
-
     // Refresh token
     const refreshed = jwtManager.refresh(jwtToken);
     
@@ -55,7 +49,6 @@ exports.verifyToken = (req, res, next) => {
 
     next();
   } catch (e) {
-    console.error('Error in verifyToken middleware:', e.message);
     return res.status(500).json({ 
       error: e.message, 
       jwtToken: '' 

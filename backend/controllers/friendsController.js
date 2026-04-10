@@ -10,9 +10,7 @@ if (!client.topology || !client.topology.isConnected()) {
 
 // Helper function to check if a user is online (has active socket)
 const isUserOnline = (userId) => {
-  // Lazy require to avoid circular dependency
-  const { userSocketsMultiple } = require('../server');
-  const sockets = userSocketsMultiple.get(userId);
+  const sockets = socketManager.getUserSocketIds(userId);
   return sockets && sockets.size > 0;
 };
 
@@ -60,7 +58,6 @@ const sendFriendRequest = async (req, res) => {
     );
 
     // Notify recipient if they're online
-    console.log('[friendsController] Attempting to notify recipient:', friendId);
     socketManager.notifyFriendRequest(friendId, {
       fromId: senderId,
       fromUsername: sender.username,
@@ -98,15 +95,12 @@ const acceptFriendRequest = async (req, res) => {
     ]);
 
     // Notify both users about the accepted request
-    console.log('[friendsController] Notifying both users of accepted request:');
-    console.log('[friendsController] - Notifying original acceptor (userId):', userId);
     socketManager.notifyFriendRequestAccepted(userId, {
       friendId: friendId,
       friendUsername: friend.username,
       friendProfilePicture: friend.profilePicture
     });
 
-    console.log('[friendsController] - Notifying original requester (friendId):', friendId);
     socketManager.notifyFriendRequestAccepted(friendId, {
       friendId: userId,
       friendUsername: user.username,
@@ -182,11 +176,8 @@ const getFriends = async (req, res) => {
   let error = '';
 
   try {
-    console.log('getFriends called with userId:', userId);
-    
     if (!userId || !ObjectId.isValid(userId)) {
       error = 'Invalid user ID';
-      console.error('Invalid userId:', userId);
       return res.status(400).json({ friends: [], error });
     }
 
@@ -195,11 +186,8 @@ const getFriends = async (req, res) => {
 
     if (!user) {
       error = 'User not found';
-      console.error('User not found in database for userId:', userId);
       return res.status(404).json({ friends: [], error });
     }
-
-    console.log('Found user:', user.username, 'with friends:', user.friends?.length || 0);
 
     const friendIds = user.friends || [];
     const friendProfiles = await db
@@ -214,11 +202,9 @@ const getFriends = async (req, res) => {
       online: isUserOnline(friend._id.toString())
     }));
 
-    console.log('Returning', friendsWithStatus.length, 'friends with online status');
     return res.status(200).json({ friends: friendsWithStatus, error: '' });
   } catch (e) {
     error = e.toString();
-    console.error('Error in getFriends:', error);
     return res.status(500).json({ friends: [], error });
   }
 };
@@ -255,7 +241,6 @@ const searchUserByUsername = async (req, res) => {
       error: '',
     });
   } catch (e) {
-    console.error('Error in searchUserByUsername:', e.toString());
     return res.status(500).json({ user: null, error: e.toString() });
   }
 };

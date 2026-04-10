@@ -1,9 +1,5 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
-console.log('🔍 DEBUG: JWT_SECRET present?', !!process.env.JWT_SECRET);
-console.log('🔍 DEBUG: __dirname:', __dirname);
-console.log('🔍 DEBUG: .env path:', require('path').join(__dirname, '.env'));
-
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -14,9 +10,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const url = process.env.MONGODB_URI;
 
 const client = new MongoClient(url);
-console.log('[Server] Connecting to MongoDB...');
-client.connect().catch(err => console.error('[Server] MongoDB connection error:', err));
-console.log('[Server] MongoDB connect() called (async)');
+client.connect().catch(err => {});
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -60,7 +54,6 @@ app.use((req, res, next) => {
 
 // Create HTTP server for Socket.IO
 const httpServer = http.createServer(app);
-console.log('[Server] HTTP server created');
 
 const io = new Server(httpServer, {
   cors: {
@@ -69,7 +62,6 @@ const io = new Server(httpServer, {
     credentials: true
   }
 });
-console.log('[Server] Socket.IO server created');
 
 // Store mapping of userId to socketId for targeting specific users
 const userSockets = new Map();
@@ -80,8 +72,6 @@ const userSocketsMultiple = new Map();
 io.on('connection', async (socket) => {
   const userId = socket.handshake.auth.userId;
   const now = new Date().toISOString();
-  console.log(`[Socket.IO] [${now}] New connection: ${socket.id}`);
-  console.log('[Socket.IO] Auth userId:', userId);
 
   if (userId) {
     // Track this socket for the user
@@ -95,12 +85,9 @@ io.on('connection', async (socket) => {
     userSocketsMultiple.get(userId).add(socket.id);
     
     const socketCount = userSocketsMultiple.get(userId).size;
-    console.log(`[Socket.IO] [${now}] ✅ User connected: ${userId}, Socket: ${socket.id}, Total sockets for user: ${socketCount}`);
-    console.log('[Socket.IO] userSockets Map:', Array.from(userSockets.entries()));
     
     // Join the status-updates room to receive online/offline notifications
     socket.join('status-updates');
-    console.log(`[Socket.IO] [${now}] Socket ${socket.id} joined status-updates room`);
 
     // Look up user's servers to join presence rooms and broadcast online status
     try {
@@ -124,7 +111,6 @@ io.on('connection', async (socket) => {
 
         // Notify all friends that they came online
         if (user && user.friends && user.friends.length > 0) {
-          console.log(`[Socket.IO] [${now}] Notifying ${user.friends.length} friends that user ${userId} came online`);
           // Broadcast to the status-updates room (all connected users)
           io.to('status-updates').emit('user-online', {
             userId: userId,
@@ -132,14 +118,9 @@ io.on('connection', async (socket) => {
           });
         }
       }
-
-      console.log(`[Socket.IO] User ${userId} joined presence rooms for ${serverIds.length} server(s)`);
     } catch (e) {
-      console.error('[Socket.IO] Error joining server presence rooms:', e);
       socket.data.serverIds = [];
     }
-  } else {
-    console.log('[Socket.IO] ❌ No userId in auth, connection not tracked');
   }
 
   // Handle joining a server channel room
@@ -147,7 +128,6 @@ io.on('connection', async (socket) => {
     const { serverId, channelId } = data;
     const roomId = `server-${serverId}-channel-${channelId}`;
     socket.join(roomId);
-    console.log(`[Socket.IO] Socket ${socket.id} joined server channel room: ${roomId}`);
   });
 
   // Handle leaving a server channel room
@@ -155,14 +135,12 @@ io.on('connection', async (socket) => {
     const { serverId, channelId } = data;
     const roomId = `server-${serverId}-channel-${channelId}`;
     socket.leave(roomId);
-    console.log(`[Socket.IO] Socket ${socket.id} left server channel room: ${roomId}`);
   });
 
   // Handle joining a DM room
   socket.on('join-dm', (recipientId) => {
     const roomId = [socket.handshake.auth.userId, recipientId].sort().join('-');
     socket.join(roomId);
-    console.log(`Socket ${socket.id} joined DM room ${roomId}`);
   });
 
   // Handle sending a direct message
@@ -174,14 +152,10 @@ io.on('connection', async (socket) => {
       ...message,
       senderId: socket.handshake.auth.userId,
     });
-
-    console.log(`Message sent in room ${roomId}`);
   });
 
   // Handle disconnect
   socket.on('disconnect', async () => {
-    const now = new Date().toISOString();
-    console.log(`[Socket.IO] [${now}] User disconnect event, userId: ${userId}, socketId: ${socket.id}`);
     if (userId) {
       const wasTracked = userSockets.has(userId);
       
@@ -189,46 +163,33 @@ io.on('connection', async (socket) => {
       if (userSocketsMultiple.has(userId)) {
         userSocketsMultiple.get(userId).delete(socket.id);
         const remainingSockets = userSocketsMultiple.get(userId).size;
-        console.log(`[Socket.IO] [${now}] Socket removed. Remaining sockets for user ${userId}: ${remainingSockets}`);
         
         // Only set online=false if this was the LAST socket for this user
         if (remainingSockets === 0) {
           userSocketsMultiple.delete(userId);
           userSockets.delete(userId);
-          console.log(`[Socket.IO] [${now}] ✅ Last socket disconnected for user ${userId}. Notifying friends and servers.`);
 
           // Notify all friends that this user went offline
           try {
             const db = client.db('discord_clone');
             const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
             if (user && user.friends && user.friends.length > 0) {
-              console.log(`[Socket.IO] [${now}] Notifying ${user.friends.length} friends that user ${userId} went offline`);
               io.to('status-updates').emit('user-offline', {
                 userId: userId,
                 username: user.username
               });
             }
-          } catch (err) {
-            console.error('[Socket.IO] Error notifying friends on disconnect:', err);
-          }
+          } catch (err) {}
 
           // Broadcast offline status to all server presence rooms
           const serverIds = socket.data?.serverIds || [];
           serverIds.forEach(sid => {
             socket.to(`server-presence:${sid}`).emit('member-offline', { userId });
           });
-
-          console.log(`[Socket.IO] Broadcasted offline for user ${userId} to ${serverIds.length} server(s)`);
-        } else {
-          console.log(`[Socket.IO] [${now}] Socket disconnected but user has ${remainingSockets} other sockets. NOT notifying.`);
         }
       } else {
         userSockets.delete(userId);
-        console.log('[Socket.IO] ✅ Removed user from tracking:', userId, 'Was tracked:', wasTracked);
       }
-      console.log('[Socket.IO] Remaining users:', Array.from(userSockets.entries()));
-    } else {
-      console.log('[Socket.IO] ❌ Disconnect event but user was not tracked');
     }
   });
 });
@@ -239,4 +200,3 @@ socketManager.setSocketIO(io, userSocketsMultiple);
 module.exports = { httpServer, io, userSockets, userSocketsMultiple };
 
 httpServer.listen(5000);
-console.log('[Server] Listening on port 5000');

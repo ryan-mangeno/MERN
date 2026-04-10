@@ -8,7 +8,7 @@
   border-right: 1px solid #2f3746;
   box-shadow: none;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto 1fr auto;
   padding: 0;
   position: relative;
   overflow: hidden;

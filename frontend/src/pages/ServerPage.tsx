@@ -7,6 +7,7 @@ import CreateChannelModal from '../components/CreateChannelModal';
 import InviteToServerModal from '../components/InviteToServerModal';
 import MessageComposer from '../components/MessageComposer';
 import MessageList from '../components/MessageList';
+import UserControls from '../components/UserControls';
 import { useChatThread } from '../hooks/useChatThread';
 import { initSocket, joinServerChannel, leaveServerChannel } from '../services/socketService';
 
@@ -214,8 +215,10 @@ const ServerPage = () => {
           )}
         </div>
 
-        {/* Text Channels */}
-        <div className="channel-section">
+        {/* Channel Sections Container - Scrollable */}
+        <div className="channel-sections-container">
+          {/* Text Channels */}
+          <div className="channel-section">
           <div className="channel-section-header">
             <div className="channel-section-title">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -305,8 +308,11 @@ const ServerPage = () => {
                 <span>General</span>
               </div>
             )}
+        </div>
           </div>
         </div>
+
+        <UserControls />
       </div>
 
       {/* Main Chat Area */}

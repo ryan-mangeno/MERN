@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './FriendsPanel.css';
 import { useFriendsChat } from '../hooks/useFriendsChat';
 import AddFriendModal from './AddFriendModal';
+import UserControls from './UserControls';
 import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
 
 interface Friend {
@@ -198,6 +199,8 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
           </>
         )}
       </section>
+
+      <UserControls />
 
       {showAddFriendModal && (
         <AddFriendModal

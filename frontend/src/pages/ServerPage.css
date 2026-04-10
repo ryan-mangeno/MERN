@@ -20,6 +20,32 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
+}
+
+/* Scrollable Channel Sections Container */
+.channel-sections-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.channel-sections-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.channel-sections-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.channel-sections-container::-webkit-scrollbar-thumb {
+  background: #4a4d52;
+  border-radius: 4px;
+}
+
+.channel-sections-container::-webkit-scrollbar-thumb:hover {
+  background: #5d5f63;
 }
 
 .server-header {

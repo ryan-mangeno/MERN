@@ -99,9 +99,7 @@ const register = async (req, res) => {
       };
 
       await sgMail.send(msg);
-      console.log(`Verification email sent to ${email}`);
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
       // Continue anyway - user can still enter code if they captured it
     }
 
@@ -112,7 +110,6 @@ const register = async (req, res) => {
   }
   catch (e) {
     error = e.toString();
-    console.error('Registration error:', error);
     return res.status(500).json({ userId: null, error });
   }
 };
@@ -122,8 +119,6 @@ const login = async (req, res) => {
   const { password } = req.body;
   const emailOrUsername = req.body.emailOrUsername ? req.body.emailOrUsername.trim().toLowerCase() : '';
   let error = '';
-
-  console.log('[Login] Login request received for:', emailOrUsername);
 
   try {
     // Validate required fields
@@ -153,12 +148,10 @@ const login = async (req, res) => {
       
       if (unverifiedUser) {
         error = 'Account exists but email is not verified. Please check your email for the verification code.';
-        console.log(`Login attempt for unverified user: ${emailOrUsername}`);
         return res.status(401).json({ userId: null, username: '', error });
       }
       
       error = 'Invalid email/username or password';
-      console.log(`Login attempt: User not found - ${emailOrUsername}`);
       return res.status(401).json({ userId: null, username: '', error });
     }
 
@@ -167,15 +160,11 @@ const login = async (req, res) => {
 
     if (!passwordMatch) {
       error = 'Invalid email/username or password';
-      console.log(`Login attempt: Password mismatch for user - ${emailOrUsername}`);
       return res.status(401).json({ userId: null, username: '', error });
     }
 
-    console.log('[Login] Password matched for user:', user._id.toString());
-
     // Generate access + refresh tokens
     const tokenResult = jwtManager.createTokenPair(user._id.toString(), user.email, user.username);
-    console.log('Token generation result:', tokenResult);
     if (tokenResult.error) {
       error = tokenResult.error;
       return res.status(500).json({ userId: null, username: '', accessToken: '', refreshToken: '', error });
@@ -191,7 +180,6 @@ const login = async (req, res) => {
   }
   catch (e) {
     error = e.toString();
-    console.error('Login error:', error);
     return res.status(500).json({ userId: null, username: '', accessToken: '', refreshToken: '', error });
   }
 };
@@ -202,11 +190,8 @@ const logout = async (req, res) => {
   let error = '';
 
   try {
-    console.log('[Logout] Logout request for userId:', userId);
-    
     if (!userId) {
       error = 'User ID not found in request';
-      console.error('[Logout] Error - User ID not found');
       return res.status(400).json({ error });
     }
 
@@ -215,16 +200,13 @@ const logout = async (req, res) => {
     // Verify user exists
     const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
     if (!user) {
-      console.error('[Logout] User not found in database:', userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log('[Logout] Successfully processed logout for userId:', userId);
     // Note: Online status is now managed by socket.io disconnect, not by explicit logout
     return res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (e) {
     error = e.toString();
-    console.error('Logout error:', error);
     return res.status(500).json({ error });
   }
 };
@@ -317,8 +299,6 @@ const verifyEmail = async (req, res) => {
       createdAt: unverifiedUser.createdAt
     };
 
-    console.log('[VerifyEmail] Creating new user:', { username: newUser.username, timestamp: new Date().toISOString() });
-
     // Insert into users collection
     const insertResult = await db.collection('users').insertOne(newUser);
     const newUserId = insertResult.insertedId.toString();
@@ -345,7 +325,6 @@ const verifyEmail = async (req, res) => {
   }
   catch (e) {
     error = e.toString();
-    console.error('Email verification error:', error);
     return res.status(500).json({ success: false, error });
   }
 };
@@ -447,9 +426,7 @@ const resendVerificationCode = async (req, res) => {
       };
 
       await sgMail.send(msg);
-      console.log(`Verification code resent to ${unverifiedUser.email}`);
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
       // Continue anyway - user still has new code
     }
 
@@ -461,7 +438,6 @@ const resendVerificationCode = async (req, res) => {
   }
   catch (e) {
     error = e.toString();
-    console.error('Resend verification code error:', error);
     return res.status(500).json({ success: false, error });
   }
 };
@@ -519,8 +495,6 @@ const recoverAccount = async (req, res) => {
       createdAt: unverifiedUser.createdAt
     };
 
-    console.log('[RecoverAccount] Creating new user:', { username: newUser.username, timestamp: new Date().toISOString() });
-
     const insertResult = await db.collection('users').insertOne(newUser);
     const userId = insertResult.insertedId.toString();
 
@@ -537,7 +511,6 @@ const recoverAccount = async (req, res) => {
   }
   catch (e) {
     error = e.toString();
-    console.error('Account recovery error:', error);
     return res.status(500).json({ success: false, error });
   }
 };
