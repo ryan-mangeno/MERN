@@ -4,6 +4,7 @@ let socket: Socket | null = null;
 let connectionState = 0; // Counter to trigger useEffect refetch on reconnect
 let messageCallbacks: Set<(message: any) => void> = new Set();
 let currentServerSubscription: { serverId: string; channelId: string } | null = null;
+let joinListenerSetup = false; // Track if join-on-connect listener is set up
 
 const getSocketUrl = () => {
   const isDev = window.location.hostname === 'localhost';
@@ -13,19 +14,24 @@ const getSocketUrl = () => {
 export const getConnectionState = () => connectionState;
 
 export const initSocket = (userId: string) => {
-  // If socket already exists and is connected, return it
+  // If socket is already connected, reuse it
   if (socket?.connected) {
+    console.log('[socketService] Socket already connected, reusing...');
     return socket;
   }
 
-  // If socket exists but is disconnected, reconnect it
-  if (socket && !socket.connected) {
-    console.log('[socketService] Reconnecting existing socket...');
-    socket.connect();
-    return socket;
+  // Clean up any existing socket and create fresh one
+  if (socket) {
+    console.log('[socketService] Closing old socket and creating fresh connection...');
+    socket.close();
   }
+  
+  socket = null;
+  messageCallbacks.clear();
+  joinListenerSetup = false;
 
   // Create new socket connection
+  console.log('[socketService] Creating new socket connection...');
   socket = io(getSocketUrl(), {
     auth: {
       userId: userId
@@ -40,26 +46,28 @@ export const initSocket = (userId: string) => {
     console.log('[socketService] Socket connected');
     connectionState++; // Increment to trigger useEffect refetch
     
-    // Rejoin the current channel subscription if one exists
-    if (currentServerSubscription) {
+    // If there's a pending channel subscription, join it
+    if (currentServerSubscription && !joinListenerSetup) {
       const { serverId, channelId } = currentServerSubscription;
-      console.log('[socketService] Rejoining channel after reconnect:', serverId, channelId);
+      console.log('[socketService] Joining channel on connect:', serverId, channelId);
       socket?.emit('join-server-channel', { serverId, channelId });
+      joinListenerSetup = true;
     }
   });
 
   socket.on('disconnect', () => {
     console.log('[socketService] Socket disconnected');
+    joinListenerSetup = false; // Reset so we rejoin after reconnect
   });
 
   socket.on('reconnect', () => {
-    console.log('[socketService] Socket reconnected');
+    console.log('[socketService] Socket reconnected after temporary disconnect');
     connectionState++; // Increment to trigger useEffect refetch
     
     // Rejoin the current channel subscription if one exists
     if (currentServerSubscription) {
       const { serverId, channelId } = currentServerSubscription;
-      console.log('[socketService] Rejoining channel after reconnect:', serverId, channelId);
+      console.log('[socketService] Rejoining channel after temporary disconnect:', serverId, channelId);
       socket?.emit('join-server-channel', { serverId, channelId });
     }
   });
@@ -119,13 +127,16 @@ export const sendDMMessage = (recipientId: string, message: any) => {
 export const joinServerChannel = (serverId: string, channelId: string) => {
   // Track this as the current subscription so we can rejoin on reconnect
   currentServerSubscription = { serverId, channelId };
+  console.log(`[socketService] Attempting to join channel: ${serverId}/${channelId}`);
   
-  if (socket?.connected) {
-    socket.emit('join-server-channel', { serverId, channelId });
-    console.log(`[socketService] ✅ Emitted join-server-channel: ${serverId}/${channelId}`);
-  } else {
-    console.warn(`[socketService] ⚠️ Socket not connected when trying to join channel`);
+  if (!socket) {
+    console.warn(`[socketService] ⚠️ Socket not initialized yet when joining channel`);
+    return;
   }
+  
+  // Emit the join - Socket.IO will buffer it if not connected
+  socket.emit('join-server-channel', { serverId, channelId });
+  console.log(`[socketService] Emitted join-server-channel: ${serverId}/${channelId} (connected: ${socket.connected})`);
 };
 
 export const leaveServerChannel = (serverId: string, channelId: string) => {

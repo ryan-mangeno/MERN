@@ -31,6 +31,9 @@ const ServerPage = () => {
     sendMessage,
     editMessage,
     removeMessage,
+    isLoadingMore,
+    allMessagesLoaded,
+    loadMoreMessages,
   } = useChatThread(serverId, channelId, undefined);
 
   // Get current user ID from localStorage
@@ -327,6 +330,9 @@ const ServerPage = () => {
                 messages={messages}
                 onEditMessage={editMessage}
                 onDeleteMessage={removeMessage}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={loadMoreMessages}
+                allMessagesLoaded={allMessagesLoaded}
               />
             </>
           ) : (
