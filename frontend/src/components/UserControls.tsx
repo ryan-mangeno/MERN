@@ -58,9 +58,17 @@ const UserControls = ({ userId, username, profilePicture }: UserControlsProps) =
           aria-label="Mute"
           title="Mute"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3C10.34 3 9 4.37 9 6.07V11.93C9 13.63 10.34 15 12 15C13.66 15 15 13.63 15 11.93V6.07C15 4.37 13.66 3 12 3ZM18.5 11C18.5 11 18.5 11.93 18.5 11.93C18.5 15.23 15.86 17.93 12.5 18V21H11V18C7.64 17.93 5 15.23 5 11.93V11H6.5V11.93C6.5 14.41 8.52 16.43 11 16.43H13C15.48 16.43 17.5 14.41 17.5 11.93V11H18.5Z" />
-          </svg>
+          {isMuted ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3L21 21M9 9V9C9 11.7614 11.2386 14 14 14V14M15 10.5V5C15 3.34315 13.6569 2 12 2V2C10.3431 2 9 3.34315 9 5V5.5M5 10V11C5 14.866 8.13401 18 12 18V18V18C15.866 18 19 14.866 19 11V10M12 18V22M12 22H9M12 22H15" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="2" width="6" height="12" rx="3" />
+              <path d="M5 10V11C5 14.866 8.13401 18 12 18V18V18C15.866 18 19 14.866 19 11V10" />
+              <path d="M12 18V22M12 22H9M12 22H15" />
+            </svg>
+          )}
         </button>
 
         <button
@@ -69,9 +77,24 @@ const UserControls = ({ userId, username, profilePicture }: UserControlsProps) =
           aria-label="Deafen"
           title="Deafen"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1C6.48 1 2 5.48 2 11V23h2V13h2v10h2V11C8 7.13 9.92 3.7 12.69 1.43C12.47 1.43 12.24 1.43 12 1ZM22 1C16.48 1 12 5.48 12 11V23h2V13h2v10h2V11C18 7.13 19.92 3.7 22.69 1.43C22.47 1.43 22.24 1.43 22 1Z" />
-          </svg>
+          {isDeafened ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <g clipPath="url(#clip0)">
+                <path fillRule="evenodd" clipRule="evenodd" d="M17.4696 9.46973C17.7625 9.1768 18.2373 9.17675 18.5303 9.46961L20.0003 10.9393L21.4696 9.46973C21.7625 9.1768 22.2373 9.17675 22.5303 9.46961C22.8232 9.76247 22.8232 10.2373 22.5304 10.5303L21.061 12L22.5304 13.4697C22.8232 13.7627 22.8232 14.2375 22.5303 14.5304C22.2373 14.8233 21.7625 14.8232 21.4696 14.5303L20.0003 13.0607L18.5303 14.5304C18.2373 14.8233 17.7625 14.8232 17.4696 14.5303C17.1767 14.2373 17.1768 13.7625 17.4697 13.4696L18.9397 12L17.4697 10.5304C17.1768 10.2375 17.1767 9.76266 17.4696 9.46973Z" fill="currentColor" />
+                <path fillRule="evenodd" clipRule="evenodd" d="M13.0367 3.3964C14.2002 2.62923 15.75 3.46373 15.75 4.85741V19.1431C15.75 20.5368 14.2002 21.3713 13.0367 20.6041L7.03762 16.6487C6.99677 16.6218 6.94892 16.6074 6.9 16.6074H4C2.48122 16.6074 1.25 15.3762 1.25 13.8574V10.1431C1.25 8.62434 2.48122 7.39313 4 7.39313H6.9C6.94892 7.39313 6.99677 7.37877 7.03762 7.35184L13.0367 3.3964Z" fill="currentColor" />
+              </g>
+              <defs>
+                <clipPath id="clip0">
+                  <rect width="24" height="24" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path fillRule="evenodd" clipRule="evenodd" d="M14.5367 3.3964C15.7002 2.62923 17.25 3.46373 17.25 4.85741V19.1431C17.25 20.5368 15.7002 21.3713 14.5367 20.6041L8.53762 16.6487C8.49677 16.6218 8.44892 16.6074 8.4 16.6074H5.5C3.98122 16.6074 2.75 15.3762 2.75 13.8574V10.1431C2.75 8.62434 3.98122 7.39313 5.5 7.39313H8.4C8.44892 7.39313 8.49677 7.37877 8.53762 7.35184L14.5367 3.3964Z" fill="currentColor" />
+              <path fillRule="evenodd" clipRule="evenodd" d="M20.5 8.25C20.9142 8.25 21.25 8.58579 21.25 9L21.25 15C21.25 15.4142 20.9142 15.75 20.5 15.75C20.0858 15.75 19.75 15.4142 19.75 15L19.75 9C19.75 8.58579 20.0858 8.25 20.5 8.25Z" fill="currentColor" />
+            </svg>
+          )}
         </button>
 
         <button
