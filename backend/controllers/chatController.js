@@ -94,13 +94,20 @@ const findServerAndChannel = async (db, serverId, channelId) => {
 		return { error: 'Server not found', server: null, channel: null };
 	}
 
-	const channel = (server.textChannels || []).find((item) => {
-		if (!item || !item.channelID) {
-			return false;
+	// Check if channel ID is in the server's textChannels array
+	const channelExists = (server.textChannels || []).some((id) => {
+		if (typeof id === 'string') {
+			return id === channelId || new ObjectId(id).toString() === channelObjId.toString();
 		}
-		return item.channelID.toString() === channelObjId.toString();
+		return id.toString() === channelObjId.toString();
 	});
 
+	if (!channelExists) {
+		return { error: 'Channel not found', server, channel: null };
+	}
+
+	// Fetch full channel details from textChannels collection
+	const channel = await db.collection('textChannels').findOne({ _id: channelObjId });
 	if (!channel) {
 		return { error: 'Channel not found', server, channel: null };
 	}

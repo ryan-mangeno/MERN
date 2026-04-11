@@ -5,6 +5,7 @@ import { getServer, deleteServer, deleteTextChannel, type Server, type Channel }
 import ServerList from '../components/ServerList';
 import CreateChannelModal from '../components/CreateChannelModal';
 import InviteToServerModal from '../components/InviteToServerModal';
+import InviteLinksPanel from '../components/InviteLinksPanel';
 import MessageComposer from '../components/MessageComposer';
 import MessageList from '../components/MessageList';
 import UserControls from '../components/UserControls';
@@ -23,6 +24,7 @@ const ServerPage = () => {
   const [channelToDelete, setChannelToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingChannel, setIsDeletingChannel] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showInviteLinksPanel, setShowInviteLinksPanel] = useState(false);
   const [showServerMenu, setShowServerMenu] = useState(false);
   const [serverProfiles, setServerProfiles] = useState<any[]>([]);
 
@@ -74,6 +76,10 @@ const ServerPage = () => {
       // Silently fail - profiles are optional
     }
   }, []);
+
+  const handleDMClick = useCallback((userId: string) => {
+    navigate(`/friends/${userId}`);
+  }, [navigate]);
 
   // Initialize socket and manage channel room subscriptions
   useEffect(() => {
@@ -212,6 +218,17 @@ const ServerPage = () => {
                   </svg>
                   Invite People
                 </button>
+                {isOwner && (
+                  <button className="dropdown-menu-item invite" onClick={() => {
+                    setShowServerMenu(false);
+                    setShowInviteLinksPanel(true);
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.486 2 2 6.486 2 12C2 17.514 6.486 22 12 22C17.514 22 22 17.514 22 12C22 6.486 17.514 2 12 2ZM16 13H13V16H11V13H8V11H11V8H13V11H16V13Z"/>
+                    </svg>
+                    Invite Links
+                  </button>
+                )}
                 {isOwner && (
                   <button className="dropdown-menu-item delete" onClick={() => {
                     setShowServerMenu(false);
@@ -354,6 +371,7 @@ const ServerPage = () => {
                 onLoadMore={loadMoreMessages}
                 allMessagesLoaded={allMessagesLoaded}
                 serverProfiles={serverProfiles}
+                onDMClick={handleDMClick}
               />
             </>
           ) : (
@@ -456,6 +474,14 @@ const ServerPage = () => {
         serverId={serverId!}
         serverName={server.serverName}
       />
+
+      {/* Invite Links Panel */}
+      {showInviteLinksPanel && (
+        <InviteLinksPanel
+          serverId={serverId!}
+          onClose={() => setShowInviteLinksPanel(false)}
+        />
+      )}
     </div>
   );
 };

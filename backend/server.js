@@ -19,6 +19,7 @@ const serverRoutes = require('./routes/serverRoutes');
 const sendGridRoutes = require('./routes/sendGridRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const inviteRoutes = require('./routes/inviteRoutes');
 const api = require('./api');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/servers', serverRoutes);
 app.use('/api/sendgrid', sendGridRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/invites', inviteRoutes);
 app.use('/', chatRoutes);
 
 // Initialize API endpoints

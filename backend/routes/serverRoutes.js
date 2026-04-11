@@ -43,6 +43,12 @@ const {
   deleteTextChannel,
 } = require('../controllers/textChannelsController');
 
+const {
+  createInvite,
+  getInvites,
+  revokeInvite,
+} = require('../controllers/inviteController');
+
 // server crud
 router.post('/', verifyToken, createServer);
 router.get('/:serverId', verifyToken, getServer);
@@ -84,5 +90,10 @@ router.post('/:serverId/textChannels', createTextChannel);
 router.get('/:serverId/textChannels', getTextChannels);
 router.patch('/:serverId/textChannels/:channelId', updateTextChannel);
 router.delete('/:serverId/textChannels/:channelId', deleteTextChannel);
+
+// server invites
+router.post('/:serverId/invites', verifyToken, createInvite);
+router.get('/:serverId/invites', verifyToken, getInvites);
+router.delete('/:serverId/invites/:linkCode', verifyToken, revokeInvite);
 
 module.exports = router;

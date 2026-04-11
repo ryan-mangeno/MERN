@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { ChatMessage } from '../types/chat';
+import UserProfilePreview from './UserProfilePreview';
 
 type MessageListProps = {
   currentUserId: string;
@@ -10,6 +11,7 @@ type MessageListProps = {
   onLoadMore?: () => Promise<void>;
   allMessagesLoaded?: boolean;
   serverProfiles?: any[];
+  onDMClick?: (userId: string) => void;
 };
 
 type MenuState = {
@@ -23,15 +25,24 @@ type EditingState = {
   content: string;
 };
 
+type ProfilePreviewState = {
+  userId: string;
+  username: string;
+  profilePicture: string;
+  x: number;
+  y: number;
+};
+
 const MESSAGE_EDIT_WINDOW_MS = 5 * 60 * 1000;
 
-function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, isLoadingMore = false, onLoadMore, allMessagesLoaded = false, serverProfiles = [] }: MessageListProps) {
+function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, isLoadingMore = false, onLoadMore, allMessagesLoaded = false, serverProfiles = [], onDMClick }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [submittingMessageId, setSubmittingMessageId] = useState('');
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [showTopPopup, setShowTopPopup] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [profilePreview, setProfilePreview] = useState<ProfilePreviewState | null>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const shouldPreserveScrollRef = useRef<boolean>(false);
 
@@ -149,6 +160,37 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
       }
     }
     return message.sender?.serverSpecificPFP || message.sender?.profilePicture || '';
+  };
+
+  const getGlobalProfile = (message: ChatMessage) => {
+    const senderUserId = message.sender?.userId || message.senderId;
+    if (serverProfiles && serverProfiles.length > 0) {
+      const cachedProfile = serverProfiles.find((p: any) => p.userId === senderUserId);
+      if (cachedProfile) {
+        return {
+          username: cachedProfile.username || 'Unknown',
+          profilePicture: cachedProfile.profilePicture || '',
+        };
+      }
+    }
+    return {
+      username: message.sender?.username || 'Unknown',
+      profilePicture: message.sender?.profilePicture || '',
+    };
+  };
+
+  const handleMessageAuthorClick = (event: React.MouseEvent, message: ChatMessage) => {
+    event.stopPropagation();
+    const senderUserId = message.sender?.userId || message.senderId;
+    const globalProfile = getGlobalProfile(message);
+    
+    setProfilePreview({
+      userId: senderUserId,
+      username: globalProfile.username,
+      profilePicture: globalProfile.profilePicture,
+      x: event.clientX,
+      y: event.clientY,
+    });
   };
 
   const isOwnMessage = (message: ChatMessage): boolean => {
@@ -303,7 +345,7 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
 
           <div className="message-bubble">
             {!isContinuation && (
-              <div className="message-meta">
+              <div className="message-meta" onClick={(e) => handleMessageAuthorClick(e, message)} style={{ cursor: 'pointer' }}>
                 <span className="message-inline-avatar" aria-hidden="true">
                   {getDisplayPictureFromCache(message) ? (
                     <img src={getAvatarSrc(getDisplayPictureFromCache(message))} alt="" />
@@ -390,6 +432,19 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
             Delete
           </button>
         </div>
+      )}
+
+      {profilePreview && (
+        <UserProfilePreview
+          userId={profilePreview.userId}
+          username={profilePreview.username}
+          profilePicture={profilePreview.profilePicture}
+          x={profilePreview.x}
+          y={profilePreview.y}
+          onClose={() => setProfilePreview(null)}
+          onDMClick={onDMClick}
+          currentUserId={currentUserId}
+        />
       )}
     </div>
     </div>

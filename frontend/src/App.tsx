@@ -9,6 +9,7 @@ import CardPage from './pages/CardPage';
 import ChatPage from './pages/ChatPage';
 import FriendsPage from './pages/FriendsPage';
 import ServerPage from './pages/ServerPage';
+import JoinPage from './pages/JoinPage';
 import { isTokenValid } from './utils/tokenStorage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -27,6 +28,7 @@ function App() {
         <Route path="/" element={<LoginPage/>}/>
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/register" element={<Register/>}/>
+        <Route path="/join/:linkCode" element={<JoinPage/>}/>
         <Route path="/friends" element={<ProtectedRoute><FriendsPage/></ProtectedRoute>}/>
         <Route path="/friends/requests" element={<ProtectedRoute><FriendsPage/></ProtectedRoute>}/>
         <Route path="/friends/:friendId" element={<ProtectedRoute><FriendsPage/></ProtectedRoute>}/>
