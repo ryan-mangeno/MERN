@@ -9,6 +9,7 @@ type MessageListProps = {
   isLoadingMore?: boolean;
   onLoadMore?: () => Promise<void>;
   allMessagesLoaded?: boolean;
+  serverProfiles?: any[];
 };
 
 type MenuState = {
@@ -24,7 +25,7 @@ type EditingState = {
 
 const MESSAGE_EDIT_WINDOW_MS = 5 * 60 * 1000;
 
-function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, isLoadingMore = false, onLoadMore, allMessagesLoaded = false }: MessageListProps) {
+function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, isLoadingMore = false, onLoadMore, allMessagesLoaded = false, serverProfiles = [] }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [submittingMessageId, setSubmittingMessageId] = useState('');
@@ -120,6 +121,34 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
       return parts[0].slice(0, 2).toUpperCase();
     }
     return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+  };
+
+  const getDisplayNameFromCache = (message: ChatMessage): string => {
+    if (serverProfiles && serverProfiles.length > 0) {
+      const senderUserId = message.sender?.userId || message.senderId;
+      const cachedProfile = serverProfiles.find((p: any) => p.userId === senderUserId);
+      if (cachedProfile?.serverSpecificName) {
+        return cachedProfile.serverSpecificName;
+      }
+      if (cachedProfile?.username) {
+        return cachedProfile.username;
+      }
+    }
+    return message.sender?.serverSpecificName || message.sender?.username || message.senderId;
+  };
+
+  const getDisplayPictureFromCache = (message: ChatMessage): string => {
+    if (serverProfiles && serverProfiles.length > 0) {
+      const senderUserId = message.sender?.userId || message.senderId;
+      const cachedProfile = serverProfiles.find((p: any) => p.userId === senderUserId);
+      if (cachedProfile?.serverProfilePicture) {
+        return cachedProfile.serverProfilePicture;
+      }
+      if (cachedProfile?.profilePicture) {
+        return cachedProfile.profilePicture;
+      }
+    }
+    return message.sender?.serverSpecificPFP || message.sender?.profilePicture || '';
   };
 
   const isOwnMessage = (message: ChatMessage): boolean => {
@@ -276,14 +305,14 @@ function MessageList({ currentUserId, messages, onEditMessage, onDeleteMessage, 
             {!isContinuation && (
               <div className="message-meta">
                 <span className="message-inline-avatar" aria-hidden="true">
-                  {message.sender?.profilePicture ? (
-                    <img src={getAvatarSrc(message.sender.profilePicture)} alt="" />
+                  {getDisplayPictureFromCache(message) ? (
+                    <img src={getAvatarSrc(getDisplayPictureFromCache(message))} alt="" />
                   ) : (
                     <span>{getAvatarLabel(message)}</span>
                   )}
                 </span>
                 <span className="message-author">
-                  {message.sender?.serverSpecificName || message.sender?.username || message.senderId}
+                  {getDisplayNameFromCache(message)}
                 </span>
                 <span className="message-time">
                   {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

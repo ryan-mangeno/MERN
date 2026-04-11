@@ -181,6 +181,7 @@ const getServerMemberProfiles = async (req, res) => {
         username: user.username || p.serverSpecificName || 'Unknown',
         profilePicture: user.profilePicture || '',
         serverSpecificName: p.serverSpecificName || '',
+        serverProfilePicture: p.serverProfilePicture || '',
       };
     });
 
@@ -223,7 +224,7 @@ const getOnlineMembers = async (req, res) => {
 // PATCH /api/servers/:serverId/profile/:userId
 const updateServerProfile = async (req, res) => {
   const { serverId, userId } = req.params;
-  const { serverSpecificName, isServerMuted, isServerDeafened, isTimedOut } = req.body;
+  const { serverSpecificName, serverProfilePicture, isServerMuted, isServerDeafened, isTimedOut } = req.body;
   let error = '';
 
   try {
@@ -232,22 +233,48 @@ const updateServerProfile = async (req, res) => {
       return res.status(400).json({ serverProfile: null, error });
     }
 
+    const db = client.db('discord_clone');
+    const userObjId = new ObjectId(userId);
+    const serverObjId = new ObjectId(serverId);
+
+    // Check if server profile exists
+    let existingProfile = await db.collection('serverProfiles').findOne({
+      serverId: serverObjId,
+      userId: userObjId
+    });
+
+    // If profile doesn't exist, create it
+    if (!existingProfile) {
+      const newProfile = {
+        serverId: serverObjId,
+        userId: userObjId,
+        serverSpecificName: '',
+        serverProfilePicture: '',
+        isServerMuted: false,
+        isServerDeafened: false,
+        isTimedOut: false,
+        createdAt: new Date()
+      };
+      await db.collection('serverProfiles').insertOne(newProfile);
+    }
+
+    // Now update the profile
     const updates = {};
     if (serverSpecificName !== undefined) updates.serverSpecificName = serverSpecificName;
+    if (serverProfilePicture !== undefined) updates.serverProfilePicture = serverProfilePicture;
     if (isServerMuted !== undefined) updates.isServerMuted = isServerMuted;
     if (isServerDeafened !== undefined) updates.isServerDeafened = isServerDeafened;
     if (isTimedOut !== undefined) updates.isTimedOut = isTimedOut;
 
-    const db = client.db('discord_clone');
     const result = await db.collection('serverProfiles').findOneAndUpdate(
-      { serverId: new ObjectId(serverId), userId: new ObjectId(userId) },
+      { serverId: serverObjId, userId: userObjId },
       { $set: updates },
       { returnDocument: 'after' }
     );
 
     if (!result) {
-      error = 'Server profile not found';
-      return res.status(404).json({ serverProfile: null, error });
+      error = 'Failed to update server profile';
+      return res.status(500).json({ serverProfile: null, error });
     }
 
     return res.status(200).json({ serverProfile: result, error: '' });

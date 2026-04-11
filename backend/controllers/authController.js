@@ -515,6 +515,54 @@ const recoverAccount = async (req, res) => {
   }
 };
 
+// DELETE /api/users/:userId - Delete user account and all associated data
+const deleteAccount = async (req, res) => {
+  const { userId } = req.params;
+  let error = '';
+
+  try {
+    if (!ObjectId.isValid(userId)) {
+      error = 'Invalid user ID';
+      return res.status(400).json({ success: false, error });
+    }
+
+    const db = client.db('discord_clone');
+    const userObjId = new ObjectId(userId);
+
+    // Check if user exists
+    const user = await db.collection('users').findOne({ _id: userObjId });
+    if (!user) {
+      error = 'User not found';
+      return res.status(404).json({ success: false, error });
+    }
+
+    // Delete user from users collection
+    await db.collection('users').deleteOne({ _id: userObjId });
+
+    // Delete all serverProfiles for this user
+    await db.collection('serverProfiles').deleteMany({ userId: userObjId });
+
+    // Delete all servers owned by this user
+    await db.collection('servers').deleteMany({ ownerId: userObjId });
+
+    // Delete all friend requests involving this user
+    await db.collection('friendRequests').deleteMany({
+      $or: [
+        { senderId: userObjId },
+        { recipientId: userObjId }
+      ]
+    });
+
+    // Delete all messages sent by this user
+    await db.collection('messages').deleteMany({ senderId: userObjId });
+
+    return res.status(200).json({ success: true, error: '' });
+  } catch (e) {
+    error = e.toString();
+    return res.status(500).json({ success: false, error });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -523,5 +571,6 @@ module.exports = {
   verifyEmail,
   resendVerificationCode,
   refreshAccessToken,
-  recoverAccount
+  recoverAccount,
+  deleteAccount
 };

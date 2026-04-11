@@ -200,7 +200,7 @@ const FriendsPanel = ({ selectedFriend, onSelectFriend, activeTab, onTabChange }
         )}
       </section>
 
-      <UserControls />
+      <UserControls isServerPage={false} />
 
       {showAddFriendModal && (
         <AddFriendModal

@@ -18,6 +18,7 @@ export interface SenderProfile {
   username?: string;
   profilePicture?: string;
   serverSpecificName?: string;
+  serverSpecificPFP?: string;
 }
 
 export interface ChatMessage {

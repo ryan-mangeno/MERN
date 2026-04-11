@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './UserControls.css';
 import UserControlsOverlay from './UserControlsOverlay';
 import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
@@ -7,48 +7,150 @@ interface UserControlsProps {
   userId?: string;
   username?: string;
   profilePicture?: string;
+  isServerPage?: boolean;
+  serverId?: string;
+  serverProfiles?: any[];
+  onProfileUpdate?: () => void;
 }
 
-const UserControls = ({ userId, username, profilePicture }: UserControlsProps) => {
+const UserControls = ({ userId, username, profilePicture, isServerPage = false, serverId, serverProfiles = [], onProfileUpdate }: UserControlsProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
+  const [currentProfilePicture, setCurrentProfilePicture] = useState<string>('');
+  const [currentUsername, setCurrentUsername] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
-  // Get current user data from localStorage if not provided as props
-  const userData = useMemo(() => {
-    if (userId && username) {
-      return { userId, username, profilePicture };
-    }
-
+  // Initialize user data from props or localStorage, prioritizing server profile cache if on server page
+  useEffect(() => {
     try {
-      const raw = localStorage.getItem('user_data');
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return {
-        userId: parsed.id || parsed.userId || '',
-        username: parsed.username || 'Unknown',
-        profilePicture: parsed.profilePicture || '',
-      };
+      let displayName = '';
+      let displayPicture = '';
+      let fetchedUserId = currentUserId || userId || '';
+
+      // First, get the current user ID
+      if (!fetchedUserId) {
+        const raw = localStorage.getItem('user_data');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          fetchedUserId = parsed.id || parsed.userId || '';
+        }
+      }
+
+      // If on a server page, prioritize serverProfiles cache
+      if (isServerPage && serverId && serverProfiles && serverProfiles.length > 0) {
+        const cachedProfile = serverProfiles.find((p: any) => p.userId === fetchedUserId);
+        if (cachedProfile) {
+          displayName = cachedProfile.serverSpecificName || cachedProfile.username || displayName;
+          displayPicture = cachedProfile.serverProfilePicture || cachedProfile.profilePicture || displayPicture;
+        }
+      }
+
+      // If still no data, check localStorage
+      if (!displayName || !displayPicture) {
+        const serverProfileKey = `serverProfile_${serverId}`;
+        const serverProfileRaw = localStorage.getItem(serverProfileKey);
+        if (serverProfileRaw) {
+          const serverProfile = JSON.parse(serverProfileRaw);
+          displayName = displayName || serverProfile.serverSpecificName || '';
+          displayPicture = displayPicture || serverProfile.serverProfilePicture || '';
+        }
+      }
+
+      // If still no data, use global profile
+      if (!displayName || !displayPicture) {
+        if (userId && username) {
+          displayName = displayName || username;
+          displayPicture = displayPicture || (profilePicture || '');
+        } else {
+          const raw = localStorage.getItem('user_data');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            displayName = displayName || (parsed.username || 'Unknown');
+            displayPicture = displayPicture || (parsed.profilePicture || '');
+            if (!fetchedUserId) {
+              fetchedUserId = parsed.id || parsed.userId || '';
+            }
+          }
+        }
+      }
+
+      setCurrentUserId(fetchedUserId);
+      setCurrentUsername(displayName);
+      setCurrentProfilePicture(displayPicture);
     } catch {
-      return null;
+      // Fail silently
     }
-  }, [userId, username, profilePicture]);
+  }, [userId, username, profilePicture, isServerPage, serverId, serverProfiles]);
 
-  if (!userData) return null;
+  // Refresh when settings modal closes, prioritizing server profile cache
+  useEffect(() => {
+    if (!showSettings) {
+      try {
+        let displayPicture = '';
+        let displayName = '';
+        let fetchedUserId = currentUserId;
 
-  const displayPicture = normalizeProfilePicturePath(userData.profilePicture);
+        // Get current user ID if not set
+        if (!fetchedUserId) {
+          const raw = localStorage.getItem('user_data');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            fetchedUserId = parsed.id || parsed.userId || '';
+          }
+        }
+
+        // If on a server page, prioritize serverProfiles cache
+        if (isServerPage && serverId && serverProfiles && serverProfiles.length > 0) {
+          const cachedProfile = serverProfiles.find((p: any) => p.userId === fetchedUserId);
+          if (cachedProfile) {
+            displayName = cachedProfile.serverSpecificName || cachedProfile.username || displayName;
+            displayPicture = cachedProfile.serverProfilePicture || cachedProfile.profilePicture || displayPicture;
+          }
+        }
+
+        // If still no data, check localStorage
+        if (!displayName || !displayPicture) {
+          const serverProfileKey = `serverProfile_${serverId}`;
+          const serverProfileRaw = localStorage.getItem(serverProfileKey);
+          if (serverProfileRaw) {
+            const serverProfile = JSON.parse(serverProfileRaw);
+            displayName = displayName || (serverProfile.serverSpecificName || '');
+            displayPicture = displayPicture || (serverProfile.serverProfilePicture || '');
+          }
+        }
+
+        // If still no data, use global profile
+        if (!displayName || !displayPicture) {
+          const raw = localStorage.getItem('user_data');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            displayName = displayName || (parsed.username || '');
+            displayPicture = displayPicture || (parsed.profilePicture || '');
+          }
+        }
+
+        if (displayName) setCurrentUsername(displayName);
+        if (displayPicture) setCurrentProfilePicture(displayPicture);
+      } catch {
+        // Fail silently
+      }
+    }
+  }, [showSettings, isServerPage, serverId, serverProfiles, currentUserId]);
+
+  const displayPicture = normalizeProfilePicturePath(currentProfilePicture);
 
   return (
     <div className="user-controls">
       <div className="user-controls-left">
         <div className="user-controls-avatar">
           {displayPicture ? (
-            <img src={displayPicture} alt={userData.username} />
+            <img src={displayPicture} alt={currentUsername} />
           ) : (
-            <span>{(userData.username || '?')[0]}</span>
+            <span>{(currentUsername || '?')[0]}</span>
           )}
         </div>
-        <span className="user-controls-username">{userData.username}</span>
+        <span className="user-controls-username">{currentUsername}</span>
       </div>
 
       <div className="user-controls-buttons">
@@ -109,7 +211,7 @@ const UserControls = ({ userId, username, profilePicture }: UserControlsProps) =
         </button>
       </div>
 
-      {showSettings && <UserControlsOverlay onClose={() => setShowSettings(false)} />}
+      {showSettings && <UserControlsOverlay onClose={() => setShowSettings(false)} isServerPage={isServerPage} serverId={serverId} onProfileUpdate={onProfileUpdate} />}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ServerPage.css';
 import { getServer, deleteServer, deleteTextChannel, type Server, type Channel } from '../services/serverApi';
@@ -24,6 +24,7 @@ const ServerPage = () => {
   const [isDeletingChannel, setIsDeletingChannel] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showServerMenu, setShowServerMenu] = useState(false);
+  const [serverProfiles, setServerProfiles] = useState<any[]>([]);
 
   // Use chat thread hook for the selected channel from URL
   const {
@@ -58,8 +59,21 @@ const ServerPage = () => {
   useEffect(() => {
     if (serverId) {
       loadServer(serverId);
+      loadServerProfiles(serverId);
     }
   }, [serverId]);
+
+  const loadServerProfiles = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/servers/${id}/members/profiles`);
+      if (response.ok) {
+        const data = await response.json();
+        setServerProfiles(data.members || []);
+      }
+    } catch (err) {
+      // Silently fail - profiles are optional
+    }
+  }, []);
 
   // Initialize socket and manage channel room subscriptions
   useEffect(() => {
@@ -312,7 +326,7 @@ const ServerPage = () => {
           </div>
         </div>
 
-        <UserControls />
+        <UserControls isServerPage={true} serverId={serverId} serverProfiles={serverProfiles} onProfileUpdate={() => serverId && loadServerProfiles(serverId)} />
       </div>
 
       {/* Main Chat Area */}
@@ -339,6 +353,7 @@ const ServerPage = () => {
                 isLoadingMore={isLoadingMore}
                 onLoadMore={loadMoreMessages}
                 allMessagesLoaded={allMessagesLoaded}
+                serverProfiles={serverProfiles}
               />
             </>
           ) : (
