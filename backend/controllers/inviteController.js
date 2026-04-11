@@ -220,6 +220,86 @@ const getInviteMetadata = async (req, res) => {
   }
 };
 
+// POST /api/servers/:serverId/personal-invites
+// Create a personal invite link for a specific user
+const createPersonalInvite = async (req, res) => {
+  const { serverId } = req.params;
+  const userId = req.userId;
+  const { recipientUserId } = req.body;
+
+  try {
+    if (!ObjectId.isValid(serverId)) {
+      return res.status(400).json({ error: 'Invalid server ID' });
+    }
+
+    if (!ObjectId.isValid(recipientUserId)) {
+      return res.status(400).json({ error: 'Invalid recipient user ID' });
+    }
+
+    const db = client.db('discord_clone');
+    const serverObjId = new ObjectId(serverId);
+    const userObjId = new ObjectId(userId);
+    const recipientObjId = new ObjectId(recipientUserId);
+
+    // Verify server exists and user is owner
+    const server = await db.collection('servers').findOne({ _id: serverObjId });
+    if (!server) {
+      return res.status(404).json({ error: 'Server not found' });
+    }
+
+    if (!server.ownerId.equals(userObjId)) {
+      return res.status(403).json({ error: 'Only server owner can create invites' });
+    }
+
+    // Check if recipient is already a member
+    const existingProfile = await db.collection('serverProfiles').findOne({
+      userId: recipientObjId,
+      serverId: serverObjId,
+    });
+
+    if (existingProfile) {
+      return res.status(409).json({ error: 'User is already a member of this server' });
+    }
+
+    // Generate unique link code
+    let linkCode = generateLinkCode();
+    let attempts = 0;
+    while (attempts < 10) {
+      const existing = await db.collection('serverInvites').findOne({ _id: linkCode });
+      if (!existing) break;
+      linkCode = generateLinkCode();
+      attempts++;
+    }
+
+    if (attempts >= 10) {
+      return res.status(500).json({ error: 'Failed to generate unique link code' });
+    }
+
+    // Build personal invite object
+    const invite = {
+      _id: linkCode,
+      serverId: serverObjId,
+      createdBy: userObjId,
+      createdAt: new Date(),
+      recipientUserId: recipientObjId,
+      isPersonal: true,
+      isRevoked: false,
+    };
+
+    await db.collection('serverInvites').insertOne(invite);
+
+    return res.status(201).json({
+      linkCode,
+      link: `/join/${linkCode}`,
+      message: 'Personal invite created successfully',
+      error: '',
+    });
+  } catch (e) {
+    const error = e.toString();
+    return res.status(500).json({ error });
+  }
+};
+
 // POST /api/invites/:linkCode/join
 // Join server via invite link (requires auth)
 const joinViaInvite = async (req, res) => {
@@ -237,6 +317,13 @@ const joinViaInvite = async (req, res) => {
       return res.status(404).json({ error: 'Invite not found' });
     }
 
+    // Check if this is a personal invite - ensure only recipient can use it
+    if (invite.isPersonal && invite.recipientUserId) {
+      if (!invite.recipientUserId.equals(userObjId)) {
+        return res.status(403).json({ error: 'This invite is not for you' });
+      }
+    }
+
     // Check if revoked
     if (invite.isRevoked) {
       return res.status(410).json({ error: 'This invite has been revoked' });
@@ -247,8 +334,8 @@ const joinViaInvite = async (req, res) => {
       return res.status(410).json({ error: 'This invite has expired' });
     }
 
-    // Check if max uses reached
-    if (invite.maxUses && invite.currentUses >= invite.maxUses) {
+    // Check if max uses reached (only for non-personal invites)
+    if (!invite.isPersonal && invite.maxUses && invite.currentUses >= invite.maxUses) {
       return res.status(410).json({ error: 'This invite has reached its maximum uses' });
     }
 
@@ -315,11 +402,16 @@ const joinViaInvite = async (req, res) => {
       { $addToSet: { servers: serverId } }
     );
 
-    // Increment invite uses
-    await db.collection('serverInvites').updateOne(
-      { _id: linkCode },
-      { $inc: { currentUses: 1 } }
-    );
+    // Increment invite uses (only non-personal invites)
+    if (!invite.isPersonal) {
+      await db.collection('serverInvites').updateOne(
+        { _id: linkCode },
+        { $inc: { currentUses: 1 } }
+      );
+    } else {
+      // Delete personal invite after successful join
+      await db.collection('serverInvites').deleteOne({ _id: linkCode });
+    }
 
     return res.status(200).json({
       message: 'Successfully joined server',
@@ -336,6 +428,7 @@ const joinViaInvite = async (req, res) => {
 
 module.exports = {
   createInvite,
+  createPersonalInvite,
   getInvites,
   revokeInvite,
   getInviteMetadata,

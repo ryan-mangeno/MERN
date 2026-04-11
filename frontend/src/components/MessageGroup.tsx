@@ -210,8 +210,26 @@ const MessageGroup: React.FC<MessageGroupProps> = ({
               <>
                 {/* Message Content */}
                 <div className="message-content">
-                  {msg.message}
-                  {msg.edited && <span className="message-edited">(edited)</span>}
+                  {msg.metadata?.type === 'serverInvite' && msg.metadata.linkCode ? (
+                    <div className="message-server-invite">
+                      <p className="invite-text">{msg.message}</p>
+                      <a 
+                        href={`/join/${msg.metadata.linkCode}`} 
+                        className="invite-button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.location.href = `/join/${msg.metadata?.linkCode}`;
+                        }}
+                      >
+                        Join Server
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      {msg.message}
+                      {msg.edited && <span className="message-edited">(edited)</span>}
+                    </>
+                  )}
                 </div>
               </>
             )}

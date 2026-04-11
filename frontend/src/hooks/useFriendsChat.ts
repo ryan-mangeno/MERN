@@ -34,6 +34,12 @@ export interface ChatMessage {
   createdAt?: string;
   edited?: boolean;
   editedAt?: string;
+  metadata?: {
+    type: string;
+    serverName?: string;
+    linkCode?: string;
+    [key: string]: any;
+  };
 }
 
 export const useFriendsChat = (recipientId?: string) => {

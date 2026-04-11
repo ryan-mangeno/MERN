@@ -45,6 +45,7 @@ const {
 
 const {
   createInvite,
+  createPersonalInvite,
   getInvites,
   revokeInvite,
 } = require('../controllers/inviteController');
@@ -93,6 +94,7 @@ router.delete('/:serverId/textChannels/:channelId', deleteTextChannel);
 
 // server invites
 router.post('/:serverId/invites', verifyToken, createInvite);
+router.post('/:serverId/personal-invites', verifyToken, createPersonalInvite);
 router.get('/:serverId/invites', verifyToken, getInvites);
 router.delete('/:serverId/invites/:linkCode', verifyToken, revokeInvite);
 

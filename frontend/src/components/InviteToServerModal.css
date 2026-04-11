@@ -285,3 +285,17 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Already Member State */
+.invite-friend-item.already-member {
+  opacity: 0.5;
+  background: #1e1f22;
+}
+
+.invite-friend-item.already-member:hover {
+  background: #1e1f22;
+}
+
+.invite-friend-item.already-member .invite-friend-name {
+  color: #949ba4;
+}

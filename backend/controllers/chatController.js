@@ -466,7 +466,7 @@ const deleteMessage = async (req, res) => {
 
 const sendDirectMessage = async (req, res) => {
 	const { recipientId } = req.params;
-	const { content, message } = req.body;
+	const { content, message, metadata } = req.body;
 	const bodyContent = content || message;
 	const { userId } = req;
 
@@ -507,6 +507,11 @@ const sendDirectMessage = async (req, res) => {
 			recipientObjId,
 			content: bodyContent,
 		});
+
+		// Add metadata if provided (for special message types like server invites)
+		if (metadata) {
+			directMessageDoc.metadata = metadata;
+		}
 
 		const senderProfile = buildSenderProfile(sender, null);
 		directMessageDoc.sender = senderProfile;

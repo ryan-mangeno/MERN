@@ -19,6 +19,8 @@ interface InviteToServerModalProps {
 
 const InviteToServerModal = ({ isOpen, onClose, serverId, serverName, onInviteSent }: InviteToServerModalProps) => {
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [serverMembers, setServerMembers] = useState<Set<string>>(new Set());
+  const [invitedUsers, setInvitedUsers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -26,22 +28,36 @@ const InviteToServerModal = ({ isOpen, onClose, serverId, serverName, onInviteSe
 
   useEffect(() => {
     if (isOpen) {
-      loadFriends();
+      loadFriendsAndMembers();
     }
   }, [isOpen]);
 
-  const loadFriends = async () => {
+  const loadFriendsAndMembers = async () => {
     try {
       setLoading(true);
-      const response = await authFetch('api/users/friends');
-      if (response.ok) {
-        const data = await response.json();
+      setError('');
+      
+      const [friendsResponse, membersResponse] = await Promise.all([
+        authFetch('api/users/friends'),
+        authFetch(`api/servers/${serverId}/members`),
+      ]);
+
+      if (friendsResponse.ok) {
+        const data = await friendsResponse.json();
         setFriends(data.friends || []);
       } else {
         setError('Failed to load friends');
       }
+
+      if (membersResponse.ok) {
+        const data = await membersResponse.json();
+        const memberIds = new Set<string>(
+          (data.members || []).map((m: any) => (typeof m === 'string' ? m : m._id))
+        );
+        setServerMembers(memberIds);
+      }
     } catch (err) {
-      console.error('Error loading friends:', err);
+      console.error('Error loading data:', err);
       setError('Failed to load friends');
     } finally {
       setLoading(false);
@@ -53,25 +69,51 @@ const InviteToServerModal = ({ isOpen, onClose, serverId, serverName, onInviteSe
       setInvitingUserId(friend._id);
       setError('');
 
-      const response = await authFetch(`api/servers/${serverId}/join`, {
+      // Create a personal invite for this user
+      const inviteResponse = await authFetch(`api/servers/${serverId}/personal-invites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: friend._id }),
+        body: JSON.stringify({ recipientUserId: friend._id }),
       });
 
-      if (response.ok) {
-        alert(`${friend.username} has been added to ${serverName}!`);
-        if (onInviteSent) {
-          onInviteSent();
+      if (inviteResponse.ok) {
+        const inviteData = await inviteResponse.json();
+        const linkCode = inviteData.linkCode;
+        
+        // Send a DM with the invite link using the REST API with metadata
+        const inviteMessage = `${friend.username}, you've been invited to join ${serverName}!`;
+        
+        const dmResponse = await authFetch(`api/chat/dms/${friend._id}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: inviteMessage,
+            metadata: {
+              type: 'serverInvite',
+              serverName,
+              linkCode,
+            },
+          }),
+        });
+
+        if (dmResponse.ok) {
+          setInvitedUsers(prev => new Set([...prev, friend._id]));
+          if (onInviteSent) {
+            onInviteSent();
+          }
+        } else {
+          console.error('Failed to send DM, but invite was created');
         }
       } else {
-        const data = await response.json();
+        const data = await inviteResponse.json();
         if (data.error?.includes('already a member')) {
           setError(`${friend.username} is already a member of this server`);
         } else {
-          setError(data.error || 'Failed to invite user');
+          setError(data.error || 'Failed to create invite');
         }
       }
     } catch (err: any) {
@@ -102,33 +144,60 @@ const InviteToServerModal = ({ isOpen, onClose, serverId, serverName, onInviteSe
 
       const userData = await userResponse.json();
       const userId = userData.user?._id;
+      const username = userData.user?.username;
 
       if (!userId) {
         setError('User not found');
         return;
       }
 
-      // Then invite them to the server
-      const inviteResponse = await authFetch(`api/servers/${serverId}/join`, {
+      // Create a personal invite for this user
+      const inviteResponse = await authFetch(`api/servers/${serverId}/personal-invites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ recipientUserId: userId }),
       });
 
       if (inviteResponse.ok) {
-        alert(`${searchQuery} has been added to ${serverName}!`);
-        setSearchQuery('');
-        if (onInviteSent) {
-          onInviteSent();
+        const inviteData = await inviteResponse.json();
+        const linkCode = inviteData.linkCode;
+        
+        // Send a DM with the invite link using the REST API with metadata
+        const inviteMessage = `${username}, you've been invited to join ${serverName}!`;
+        
+        const dmResponse = await authFetch(`api/chat/dms/${userId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: inviteMessage,
+            metadata: {
+              type: 'serverInvite',
+              serverName,
+              linkCode,
+            },
+          }),
+        });
+
+        if (dmResponse.ok) {
+          setInvitedUsers(prev => new Set([...prev, userId]));
+          setSearchQuery('');
+          if (onInviteSent) {
+            onInviteSent();
+          }
+        } else {
+          console.error('Failed to send DM, but invite was created');
+          setSearchQuery('');
         }
       } else {
         const data = await inviteResponse.json();
         if (data.error?.includes('already a member')) {
           setError(`${searchQuery} is already a member of this server`);
         } else {
-          setError(data.error || 'Failed to invite user');
+          setError(data.error || 'Failed to create invite');
         }
       }
     } catch (err: any) {
@@ -191,32 +260,47 @@ const InviteToServerModal = ({ isOpen, onClose, serverId, serverName, onInviteSe
               </p>
             )}
             <div className="invite-friends-list">
-              {filteredFriends.map((friend) => (
-                <div key={friend._id} className="invite-friend-item">
-                  <div className="invite-friend-info">
-                    <div className="invite-friend-avatar">
-                      {friend.profilePicture ? (
-                        <img 
-                          src={normalizeProfilePicturePath(friend.profilePicture)} 
-                          alt={friend.username}
-                        />
-                      ) : (
-                        <div className="invite-friend-avatar-fallback">
-                          {friend.username[0]?.toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <span className="invite-friend-name">{friend.username}</span>
-                  </div>
-                  <button
-                    className="invite-friend-btn"
-                    onClick={() => handleInvite(friend)}
-                    disabled={invitingUserId === friend._id}
+              {filteredFriends.map((friend) => {
+                const isAlreadyMember = serverMembers.has(friend._id);
+                const isInvited = invitedUsers.has(friend._id);
+                const isInviting = invitingUserId === friend._id;
+
+                return (
+                  <div 
+                    key={friend._id} 
+                    className={`invite-friend-item ${isAlreadyMember ? 'already-member' : ''}`}
                   >
-                    {invitingUserId === friend._id ? 'Inviting...' : 'Invite'}
-                  </button>
-                </div>
-              ))}
+                    <div className="invite-friend-info">
+                      <div className="invite-friend-avatar">
+                        {friend.profilePicture ? (
+                          <img 
+                            src={normalizeProfilePicturePath(friend.profilePicture)} 
+                            alt={friend.username}
+                          />
+                        ) : (
+                          <div className="invite-friend-avatar-fallback">
+                            {friend.username[0]?.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <span className="invite-friend-name">{friend.username}</span>
+                    </div>
+                    <button
+                      className="invite-friend-btn"
+                      onClick={() => handleInvite(friend)}
+                      disabled={isAlreadyMember || isInvited || isInviting}
+                    >
+                      {isAlreadyMember 
+                        ? 'Already Member' 
+                        : isInvited 
+                        ? 'Sent' 
+                        : isInviting 
+                        ? 'Inviting...' 
+                        : 'Invite'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
