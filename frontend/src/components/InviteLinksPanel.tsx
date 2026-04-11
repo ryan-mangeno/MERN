@@ -117,7 +117,7 @@ const InviteLinksPanel: React.FC<InviteLinksPanelProps> = ({ serverId, onClose }
             <div className="invite-links-list">
               {links.map(link => {
                 const expired = isExpired(link.expiresAt);
-                const maxReached = link.maxUses && link.currentUses >= link.maxUses;
+                const maxReached = !!(link.maxUses && link.currentUses >= link.maxUses);
                 const isDisabled = link.isRevoked || expired || maxReached;
 
                 return (

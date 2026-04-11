@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './UserControls.css';
 import UserControlsOverlay from './UserControlsOverlay';
 import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
