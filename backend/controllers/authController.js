@@ -536,16 +536,45 @@ const deleteAccount = async (req, res) => {
       return res.status(404).json({ success: false, error });
     }
 
-    // Delete user from users collection
-    await db.collection('users').deleteOne({ _id: userObjId });
+    // 1. Remove user from all servers (they're a member of)
+    await db.collection('servers').updateMany(
+      { members: userObjId },
+      { $pull: { members: userObjId } }
+    );
 
-    // Delete all serverProfiles for this user
+    // 2. Delete all serverProfiles for this user
     await db.collection('serverProfiles').deleteMany({ userId: userObjId });
 
-    // Delete all servers owned by this user
+    // 3. Delete all servers owned by this user and get their IDs
+    const ownedServers = await db.collection('servers').find({ ownerId: userObjId }).toArray();
+    const ownedServerIds = ownedServers.map(s => s._id);
     await db.collection('servers').deleteMany({ ownerId: userObjId });
 
-    // Delete all friend requests involving this user
+    // 4. Remove user from friends lists of other users
+    await db.collection('users').updateMany(
+      { friends: userObjId },
+      { $pull: { friends: userObjId } }
+    );
+
+    // 5. Remove only OWNED servers (deleted servers) from friends' user documents
+    if (ownedServerIds.length > 0) {
+      await db.collection('users').updateMany(
+        { servers: { $in: ownedServerIds } },
+        { $pull: { servers: { $in: ownedServerIds } } }
+      );
+    }
+
+    // 6. Delete all direct messages involving this user
+    await db.collection('directMessages').deleteMany({
+      $or: [
+        { senderId: userObjId },
+        { recieverId: userObjId },
+        { senderID: userObjId },
+        { recipientID: userObjId }
+      ]
+    });
+
+    // 7. Delete all friend requests involving this user
     await db.collection('friendRequests').deleteMany({
       $or: [
         { senderId: userObjId },
@@ -553,8 +582,25 @@ const deleteAccount = async (req, res) => {
       ]
     });
 
-    // Delete all messages sent by this user
-    await db.collection('messages').deleteMany({ senderId: userObjId });
+    // 8. For server messages: Replace sender info with "Deleted User" instead of deleting
+    //    This preserves conversation context and message history
+    await db.collection('messages').updateMany(
+      { senderId: userObjId },
+      {
+        $set: {
+          senderId: null,
+          senderID: null,
+          sender: {
+            username: '[Deleted User]',
+            profilePicture: '',
+            _id: null
+          }
+        }
+      }
+    );
+
+    // 9. Delete the user account
+    await db.collection('users').deleteOne({ _id: userObjId });
 
     return res.status(200).json({ success: true, error: '' });
   } catch (e) {

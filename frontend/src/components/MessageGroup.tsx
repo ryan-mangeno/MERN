@@ -164,7 +164,9 @@ const MessageGroup: React.FC<MessageGroupProps> = ({
             {/* Username and Time Header - only on first message */}
             {idx === 0 && (
               <div className="message-header">
-                <span className="message-username">{senderUsername}</span>
+                <span className="message-username">
+                  {senderUsername === '[Deleted User]' ? '(deleted)' : senderUsername}
+                </span>
                 <span className="message-time">
                   {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : 'Just now'}
                 </span>
