@@ -39,7 +39,7 @@ const ServerPage = () => {
     if (!newVoiceChannelName.trim() || !serverId) return;
     try {
       setIsCreatingVoice(true);
-      await fetch(`http://localhost:5000/api/servers/${serverId}/voiceChannels`, {
+      await fetch(`/api/servers/${serverId}/voiceChannels`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ channelName: newVoiceChannelName.trim() }),
@@ -93,7 +93,7 @@ const ServerPage = () => {
 
   const loadServerProfiles = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/servers/${id}/members/profiles`);
+      const response = await fetch(`/api/servers/${id}/members/profiles`);
       if (response.ok) {
         const data = await response.json();
         setServerProfiles(data.members || []);
