@@ -22,7 +22,7 @@ export const VoiceChannel: React.FC<VoiceChannelProps> = ({
   currentUserId,
   onLeave,
 }) => {
-  const { isConnected, remoteStreams } = useVoice(channelId, currentUserId);
+  const { remoteStreams } = useVoice(channelId, currentUserId);
   const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
   const myUsername = userData.username || 'Me';
 

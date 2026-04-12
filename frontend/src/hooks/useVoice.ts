@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { getSocket, initSocket } from '../services/socketService';
 
 interface Peer {
@@ -26,9 +26,6 @@ const ICE_SERVERS: RTCConfiguration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
 };
 
-const getSocketUrl = () => {
-  const isDev = window.location.hostname === 'localhost';
-  return isDev ? 'http://localhost:5000' : window.location.origin;
 };
 
 
