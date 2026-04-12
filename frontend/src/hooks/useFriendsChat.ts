@@ -350,26 +350,7 @@ export const useFriendsChat = (recipientId?: string) => {
   // Listen for incoming real-time messages
   useEffect(() => {
     const handleReceiveMessage = (incomingMessage: any) => {
-      // Only add messages for the current conversation
-      const targetId = recipientId || selectedFriend?._id;
-      const senderId = incomingMessage.senderId || incomingMessage.userId;
-      const messageRecipientId = incomingMessage.recipientId || incomingMessage.recieverId;
-      
-      // Check if this message is for the current conversation
-      const isForCurrentThread = (senderId === targetId || messageRecipientId === targetId) &&
-                                 (senderId === userId || messageRecipientId === userId);
-      
-      if (isForCurrentThread) {
-        setMessages(prevMessages => {
-          // Avoid duplicates by checking both _id and id properties
-          const incomingId = incomingMessage._id || incomingMessage.id;
-          const exists = prevMessages.some((msg: any) => {
-            const msgId = msg._id || msg.id;
-            return msgId === incomingId;
-          });
-          return exists ? prevMessages : [...prevMessages, incomingMessage];
-        });
-      }
+      setMessages(prevMessages => [...prevMessages, incomingMessage]);
     };
 
     onReceiveMessage(handleReceiveMessage);
@@ -377,7 +358,7 @@ export const useFriendsChat = (recipientId?: string) => {
     return () => {
       offReceiveMessage(handleReceiveMessage);
     };
-  }, [recipientId, selectedFriend?._id, userId]);
+  }, [getConnectionState()]);
 
   // Send message
   const sendMessage = async (messageInput: string): Promise<boolean> => {

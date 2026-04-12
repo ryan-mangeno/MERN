@@ -10,7 +10,7 @@ import {
 import type { ChatMessage, Thread } from '../types/chat';
 import { authFetch } from '../utils/authFetch';
 import { toMessage } from '../utils/chatAdapter';
-import { onReceiveMessage, offReceiveMessage } from '../services/socketService';
+import { onReceiveMessage, offReceiveMessage, getConnectionState } from '../services/socketService';
 
 export const useChatThread = (serverId?: string, channelId?: string, recieverId?: string) => {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -142,30 +142,15 @@ export const useChatThread = (serverId?: string, channelId?: string, recieverId?
     return () => {
       offReceiveMessage(handleSocketMessage);
     };
-  }, [serverId, channelId, activeThread?.id]);
+  }, [serverId, channelId, activeThread?.id, getConnectionState()]);
 
   const sendMessage = async (content: string) => {
     if (!activeThread) {
       return;
     }
 
-    try {
-      // Send message to server
-      const sentMessage = await sendMessageToThread(activeThread, content);
-      
-      // Optimistically add to state immediately so user sees their message
-      setMessages((prev) => {
-        // Check if this message already exists (from socket broadcast)
-        const exists = prev.some((msg) => msg.id === sentMessage.id);
-        if (exists) {
-          return prev;
-        }
-        return [...prev, sentMessage];
-      });
-    } catch (err) {
-      console.error('[useChatThread] Failed to send message:', err);
-      throw err;
-    }
+    await sendMessageToThread(activeThread, content);
+    // Don't add to state here - let the socket broadcast update all users uniformly
   };
 
   const editMessage = async (messageId: string, content: string) => {
