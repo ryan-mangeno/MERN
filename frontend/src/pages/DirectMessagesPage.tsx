@@ -1,5 +1,6 @@
 import './DirectMessagesPage.css';
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom'; 
 
 type User = {
   _id: string;
@@ -7,12 +8,15 @@ type User = {
 };
 
 const DirectMessagesPage = () => {
+  const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (!userId) return; 
+
       try {
-        const res = await fetch('http://localhost:5000/api/users/PUT_USER_ID_HERE');
+        const res = await fetch(`/api/users/${userId}`);
         const data = await res.json();
         setUser(data);
       } catch (err) {
@@ -21,7 +25,7 @@ const DirectMessagesPage = () => {
     };
 
     fetchUser();
-  }, []);
+  }, [userId]); 
 
   return (
     <div className="dm-screen">
