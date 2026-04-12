@@ -12,6 +12,8 @@ import UserControls from '../components/UserControls';
 import { useChatThread } from '../hooks/useChatThread';
 import { initSocket, joinServerChannel, leaveServerChannel } from '../services/socketService';
 
+type MemberStatus = 'online' | 'idle' | 'dnd' | 'offline';
+
 const ServerPage = () => {
   const { serverId, channelId } = useParams<{ serverId: string; channelId?: string }>();
   const navigate = useNavigate();
@@ -80,6 +82,58 @@ const ServerPage = () => {
   const handleDMClick = useCallback((userId: string) => {
     navigate(`/friends/${userId}`);
   }, [navigate]);
+
+  const getMemberStatus = useCallback((member: any): MemberStatus => {
+    const raw = (member?.status || member?.presence || member?.state || '').toString().toLowerCase();
+    if (raw === 'online' || member?.online === true || member?.isOnline === true) return 'online';
+    if (raw === 'idle') return 'idle';
+    if (raw === 'dnd' || raw === 'do_not_disturb' || raw === 'donotdisturb') return 'dnd';
+    return 'offline';
+  }, []);
+
+  const getMemberRole = useCallback((member: any): string => {
+    return (
+      member?.roleName ||
+      member?.role ||
+      member?.serverRole ||
+      member?.roleTitle ||
+      member?.roles?.[0]?.name ||
+      'Member'
+    );
+  }, []);
+
+  const getMemberColor = useCallback((member: any): string | undefined => {
+    return member?.roleColor || member?.color || member?.accentColor;
+  }, []);
+
+  const getMemberInitials = useCallback((member: any): string => {
+    const name = (member?.username || member?.name || member?.displayName || '').toString().trim();
+    if (!name) return '?';
+    return name.slice(0, 1).toUpperCase();
+  }, []);
+
+  const memberGroups = useMemo(() => {
+    const members = Array.isArray(serverProfiles) ? serverProfiles : [];
+    const online: any[] = [];
+    const offline: any[] = [];
+
+    for (const member of members) {
+      const status = getMemberStatus(member);
+      if (status === 'offline') offline.push(member);
+      else online.push(member);
+    }
+
+    const byName = (a: any, b: any) => {
+      const an = (a?.username || a?.name || '').toString().toLowerCase();
+      const bn = (b?.username || b?.name || '').toString().toLowerCase();
+      return an.localeCompare(bn);
+    };
+
+    online.sort(byName);
+    offline.sort(byName);
+
+    return { online, offline };
+  }, [serverProfiles, getMemberStatus]);
 
   // Initialize socket and manage channel room subscriptions
   useEffect(() => {
@@ -395,6 +449,77 @@ const ServerPage = () => {
           </div>
         )}
       </div>
+
+      {/* Members Sidebar */}
+      <aside className="server-members-sidebar" aria-label="Server members">
+        <div className="server-members-scroll">
+          <div className="member-group">
+            <p className="member-group-title">Online - {memberGroups.online.length}</p>
+            {memberGroups.online.map((member: any) => {
+              const status = getMemberStatus(member);
+              const name = member?.username || member?.name || member?.displayName || 'Unknown';
+              const role = getMemberRole(member);
+              const roleColor = getMemberColor(member);
+
+              return (
+                <div
+                  className={`member-row member-status-${status}`}
+                  key={member?._id || member?.userId || member?.id || name}
+                  title={role}
+                >
+                  <div className="member-avatar" aria-hidden="true">
+                    {member?.profilePicture ? (
+                      <img src={member.profilePicture} alt="" />
+                    ) : (
+                      getMemberInitials(member)
+                    )}
+                    <span className="member-status-dot" aria-hidden="true" />
+                  </div>
+                  <div className="member-meta">
+                    <div className="member-name" style={roleColor ? { color: roleColor } : undefined}>
+                      {name}
+                    </div>
+                    <div className="member-role">{role}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="member-group">
+            <p className="member-group-title">Offline - {memberGroups.offline.length}</p>
+            {memberGroups.offline.map((member: any) => {
+              const status = getMemberStatus(member);
+              const name = member?.username || member?.name || member?.displayName || 'Unknown';
+              const role = getMemberRole(member);
+              const roleColor = getMemberColor(member);
+
+              return (
+                <div
+                  className={`member-row member-status-${status}`}
+                  key={member?._id || member?.userId || member?.id || name}
+                  title={role}
+                >
+                  <div className="member-avatar" aria-hidden="true">
+                    {member?.profilePicture ? (
+                      <img src={member.profilePicture} alt="" />
+                    ) : (
+                      getMemberInitials(member)
+                    )}
+                    <span className="member-status-dot" aria-hidden="true" />
+                  </div>
+                  <div className="member-meta">
+                    <div className="member-name" style={roleColor ? { color: roleColor } : undefined}>
+                      {name}
+                    </div>
+                    <div className="member-role">{role}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
