@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ServerPage.css';
+import { authFetch } from '../utils/authFetch';
+import { normalizeProfilePicturePath } from '../utils/profilePictureUtils';
 import { getServer, deleteServer, deleteTextChannel, type Server, type Channel } from '../services/serverApi';
 import ServerList from '../components/ServerList';
 import CreateChannelModal from '../components/CreateChannelModal';
@@ -93,13 +95,17 @@ const ServerPage = () => {
 
   const loadServerProfiles = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/servers/${id}/members/profiles`);
+      console.log('Loading server profiles for:', id);
+      const response = await authFetch(`api/servers/${id}/members/profiles`);
       if (response.ok) {
         const data = await response.json();
+        console.log('Server profiles loaded:', data);
         setServerProfiles(data.members || []);
+      } else {
+        console.error('Failed to load server profiles:', response.status, response.statusText);
       }
     } catch (err) {
-      // Silently fail - profiles are optional
+      console.error('Error loading server profiles:', err);
     }
   }, []);
 
@@ -518,8 +524,10 @@ const ServerPage = () => {
                   title={role}
                 >
                   <div className="member-avatar" aria-hidden="true">
-                    {member?.profilePicture ? (
-                      <img src={member.profilePicture} alt="" />
+                    {member?.serverProfilePicture ? (
+                      <img src={normalizeProfilePicturePath(member.serverProfilePicture)} alt="" />
+                    ) : member?.profilePicture ? (
+                      <img src={normalizeProfilePicturePath(member.profilePicture)} alt="" />
                     ) : (
                       getMemberInitials(member)
                     )}
@@ -551,8 +559,10 @@ const ServerPage = () => {
                   title={role}
                 >
                   <div className="member-avatar" aria-hidden="true">
-                    {member?.profilePicture ? (
-                      <img src={member.profilePicture} alt="" />
+                    {member?.serverProfilePicture ? (
+                      <img src={normalizeProfilePicturePath(member.serverProfilePicture)} alt="" />
+                    ) : member?.profilePicture ? (
+                      <img src={normalizeProfilePicturePath(member.profilePicture)} alt="" />
                     ) : (
                       getMemberInitials(member)
                     )}

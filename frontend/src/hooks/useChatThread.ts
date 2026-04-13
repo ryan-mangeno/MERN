@@ -10,7 +10,7 @@ import {
 import type { ChatMessage, Thread } from '../types/chat';
 import { authFetch } from '../utils/authFetch';
 import { toMessage } from '../utils/chatAdapter';
-import { onReceiveMessage, offReceiveMessage, getConnectionState } from '../services/socketService';
+import { onReceiveMessage, offReceiveMessage } from '../services/socketService';
 
 export const useChatThread = (serverId?: string, channelId?: string, recieverId?: string) => {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -142,7 +142,7 @@ export const useChatThread = (serverId?: string, channelId?: string, recieverId?
     return () => {
       offReceiveMessage(handleSocketMessage);
     };
-  }, [serverId, channelId, activeThread?.id, getConnectionState()]);
+  }, [serverId, channelId, activeThread?.id]);
 
   const sendMessage = async (content: string) => {
     if (!activeThread) {

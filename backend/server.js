@@ -59,10 +59,36 @@ const httpServer = http.createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'http://syncord.space', 'https://syncord.space'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000', 'http://syncord.space', 'https://syncord.space'],
     methods: ['GET', 'POST'],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling']
+});
+
+console.log('[INITIALIZATION] Socket.IO Server created');
+
+// Add error handler for socket.io
+io.on('error', (error) => {
+  console.error('[SOCKET.IO ERROR]:', error);
+});
+
+io.engine.on('connection_error', (err) => {
+  console.error('[SOCKET.IO CONNECTION ERROR]:', err.code, err.message);
+});
+
+// Listen for ANY connection attempt (before auth validation)
+io.engine.on('initial_headers', (headers, req) => {
+  console.log('[ENGINE] Initial headers received from:', req.url);
+});
+
+// Log all engine events to see what's happening
+io.engine.on('headers', (headers, req) => {
+  console.log('[ENGINE] Headers event:', req.url, Object.keys(headers));
+});
+
+io.engine.on('connection', (rawSocket) => {
+  console.log('[ENGINE.RAW] Raw socket connection received from:', rawSocket._sockets?.socket?.remoteAddress || 'unknown');
 });
 
 // Store mapping of userId to socketId for targeting specific users
@@ -74,10 +100,13 @@ const voiceRooms = {};
 
 // Socket.IO connection handling
 io.on('connection', async (socket) => {
+  console.log(`[SOCKET] New connection received. Socket ID: ${socket.id}`);
   const userId = socket.handshake.auth.userId;
   const now = new Date().toISOString();
 
   if (userId) {
+    console.log(`[CONNECTION] User ${userId} connecting with socket ${socket.id}`);
+    
     // Track this socket for the user
     userSockets.set(userId, socket.id);
     
@@ -89,6 +118,7 @@ io.on('connection', async (socket) => {
     userSocketsMultiple.get(userId).add(socket.id);
     
     const socketCount = userSocketsMultiple.get(userId).size;
+    console.log(`[CONNECTION] User ${userId} now has ${socketCount} socket(s). First socket: ${wasFirstSocket}`);
     
     // Join the status-updates room to receive online/offline notifications
     socket.join('status-updates');
@@ -108,6 +138,18 @@ io.on('connection', async (socket) => {
 
       // If this is the FIRST socket for this user, notify friends and servers that they came online
       if (wasFirstSocket) {
+        console.log(`[ONLINE] User ${userId} coming online - setting isOnline to true (first socket: ${socket.id})`);
+        // Update user document to mark as online
+        try {
+          const updateResult = await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: { isOnline: true } }
+          );
+          console.log(`[ONLINE] User ${userId} isOnline updated: ${updateResult.modifiedCount} documents modified`);
+        } catch (err) {
+          console.error('[ONLINE] Error updating user isOnline status:', err);
+        }
+
         // Tell all other members in those servers that this user just came online
         serverIds.forEach(sid => {
           socket.to(`server-presence:${sid}`).emit('member-online', { userId });
@@ -121,6 +163,8 @@ io.on('connection', async (socket) => {
             username: user.username
           });
         }
+      } else {
+        console.log(`[ONLINE] User ${userId} has ${socketCount} sockets now (new socket: ${socket.id})`);
       }
     } catch (e) {
       socket.data.serverIds = [];
@@ -206,13 +250,23 @@ io.on('connection', async (socket) => {
       if (userSocketsMultiple.has(userId)) {
         userSocketsMultiple.get(userId).delete(socket.id);
         const remainingSockets = userSocketsMultiple.get(userId).size;
- 
+        console.log(`[OFFLINE] User ${userId} socket disconnected (${socket.id}). Remaining sockets: ${remainingSockets}`);
+
         if (remainingSockets === 0) {
           userSocketsMultiple.delete(userId);
           userSockets.delete(userId);
- 
+          console.log(`[OFFLINE] User ${userId} has NO remaining sockets - setting isOnline to false`);
+
           try {
             const db = client.db('discord_clone');
+            
+            // Update user document to mark as offline
+            const updateResult = await db.collection('users').updateOne(
+              { _id: new ObjectId(userId) },
+              { $set: { isOnline: false } }
+            );
+            console.log(`[OFFLINE] User ${userId} isOnline updated to false: ${updateResult.modifiedCount} documents modified`);
+
             const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
             if (user && user.friends && user.friends.length > 0) {
               io.to('status-updates').emit('user-offline', {
@@ -220,18 +274,23 @@ io.on('connection', async (socket) => {
                 username: user.username,
               });
             }
-          } catch (err) {}
- 
+          } catch (err) {
+            console.error('[OFFLINE] Error handling disconnect:', err);
+          }
+
           const serverIds = socket.data?.serverIds || [];
           serverIds.forEach(sid => {
             socket.to(`server-presence:${sid}`).emit('member-offline', { userId });
           });
+        } else {
+          console.log(`[OFFLINE] User ${userId} still has ${remainingSockets} socket(s) - keeping online`);
         }
       } else {
         userSockets.delete(userId);
+        console.log(`[OFFLINE] User ${userId} disconnected (not in userSocketsMultiple)`);
       }
     }
- 
+
     for (const [channelId, members] of Object.entries(voiceRooms)) {
       if (members.has(socket.id)) {
         const vUserId = members.get(socket.id);
@@ -249,4 +308,6 @@ socketManager.setSocketIO(io, userSocketsMultiple, voiceRooms);
 
 module.exports = { httpServer, io, userSockets, userSocketsMultiple };
 
-httpServer.listen(5000);
+httpServer.listen(5000, () => {
+  console.log('[SERVER] HTTP/Socket.IO server listening on port 5000');
+});
