@@ -140,11 +140,14 @@ export const useVoice = (channelId: string, userId: string) => {
     initVoice();
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.emit('leave-voice', { channelId, userId });
+      }
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop());
       }
       Object.values(peersRef.current).forEach(pc => pc.close());
+      peersRef.current = {};
     };
   }, [channelId, userId]);
 
