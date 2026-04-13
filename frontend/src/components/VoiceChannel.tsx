@@ -75,26 +75,32 @@ export const VoiceChannel: React.FC<VoiceChannelProps> = ({
         
 
         {/* Remote users */}
-        {Object.entries(remoteStreams).map(([socketId, stream]) => {
-          const userId = remoteUsers[socketId];
-          const profile = serverProfiles.find(p => p.userId === userId);
-          const name = profile?.username || profile?.serverSpecificName || 'Unknown';
-          
-          return (
-            <div key={socketId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 4px' }}>
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                background: '#4e5058', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: 'white',
-              }}>
-                {name[0]?.toUpperCase() || '?'}
-              </div>
-              <span style={{ color: '#dbdee1', fontSize: '13px' }}>{name}</span>
-              <span style={{ marginLeft: 'auto', fontSize: '14px' }}>🎤</span>
-              <AudioPlayer stream={stream} />
+      {Object.entries(remoteStreams).map(([socketId, stream]) => {
+        const userId = remoteUsers[socketId];
+        
+        const profile = serverProfiles.find(p => 
+          p._id === userId || 
+          p.id === userId || 
+          p.userId === userId
+        );
+
+        const name = profile?.username || profile?.displayName || profile?.name || 'Unknown';
+        
+        return (
+          <div key={socketId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '2px 4px' }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%',
+              background: '#4e5058', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', color: 'white',
+            }}>
+              {name[0]?.toUpperCase() || '?'}
             </div>
-          );
-        })}
+            <span style={{ color: '#dbdee1', fontSize: '13px' }}>{name}</span>
+            <span style={{ marginLeft: 'auto', fontSize: '14px' }}>🎤</span>
+            <AudioPlayer stream={stream} />
+          </div>
+        );
+      })}
       </div>
     </div>
   );
