@@ -202,27 +202,31 @@ io.on('connection', async (socket) => {
     });
   });
 
-  socket.on('join-voice', ({ channelId, userId: vUserId }) => {
+  socket.on('join-voice', ({ channelId, userId: vUserId, username: vUsername }) => {
     socket.join(channelId);
- 
+
     if (!voiceRooms[channelId]) voiceRooms[channelId] = new Map();
-    voiceRooms[channelId].set(socket.id, vUserId);
- 
+    voiceRooms[channelId].set(socket.id, { userId: vUserId, username: vUsername });
+
     const existingPeers = [];
-    voiceRooms[channelId].forEach((uid, sid) => {
-      if (sid !== socket.id) existingPeers.push({ socketId: sid, userId: uid });
+    voiceRooms[channelId].forEach((data, sid) => {
+      if (sid !== socket.id) {
+        const uid = typeof data === 'string' ? data : data.userId;
+        const uname = typeof data === 'string' ? 'Unknown' : data.username;
+        existingPeers.push({ socketId: sid, userId: uid, username: uname });
+      }
     });
     socket.emit('existing-peers', { peers: existingPeers });
- 
-    // tell existing users someone join
+
     socket.to(channelId).emit('user-joined', {
       socketId: socket.id,
       userId: vUserId,
+      username: vUsername
     });
- 
-    console.log(`[voice] ${vUserId} joined channel ${channelId}`);
+
+    console.log(`[voice] ${vUserId} (${vUsername}) joined channel ${channelId}`);
   });
- 
+  
   socket.on('offer', ({ to, offer, userId: oUserId }) => {
     io.to(to).emit('offer', { from: socket.id, userId: oUserId, offer });
   });
