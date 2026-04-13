@@ -40,6 +40,9 @@ const notifyFriendRequestDeclined = (userId, data) => {
   emitToUser(userId, 'friend-request-declined', data);
 };
 
+const notifyFriendRemoved = (userId, data) => {
+  emitToUser(userId, 'friend-removed', data);
+};
 
 const notifyUserOnline = (userId, friends) => {
   if (!friends || friends.length === 0) return;
@@ -90,6 +93,7 @@ module.exports = {
   notifyFriendRequest,
   notifyFriendRequestAccepted,
   notifyFriendRequestDeclined,
+  notifyFriendRemoved,
   notifyUserOnline,
   notifyUserOffline,
   broadcastMessageToServerChannel,

@@ -208,6 +208,18 @@ export const offFriendRequestDeclined = (callback: (data: any) => void) => {
   socket.off('friend-request-declined', callback);
 };
 
+export const onFriendRemoved = (callback: (data: any) => void) => {
+  if (!socket) {
+    return;
+  }
+  socket.on('friend-removed', callback);
+};
+
+export const offFriendRemoved = (callback: (data: any) => void) => {
+  if (!socket) return;
+  socket.off('friend-removed', callback);
+};
+
 // User online/offline handlers
 export const onUserOnline = (callback: (data: any) => void) => {
   if (!socket) {
